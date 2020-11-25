@@ -1,7 +1,8 @@
 /*Lex Scanner file*/
 
 %%
-/* Keywords Lexemes*/
+
+											/* Keywords Lexemes*/
 bool     																			{return BOOLT; }
 char     																			{return CHART; }
 int      																				{return INTT; }
@@ -18,6 +19,9 @@ func     																			{return FUNC; }
 proc     																			{return PROC; }
 return   																			{return RETURN; }
 null     																				{return NULL; }
+Main																				{return MAIN; }
+
+											/*Operator Lexemes*/
 "&&"     																			{return AND; }
 "/"     																				{return DIVIDE; }
 "="      																				{return ASIGN; }
@@ -34,6 +38,8 @@ null     																				{return NULL; }
 "*"      																				{return MULTIPLY; }
 "&"      																				{return ADDRESS; }
 "^"      																				{return DEREFERENCE; }
+
+												/* Other lexemes */
 ";"																						{return ENDLIINE; }
 ":"																						{return COLONS; }
 ","																						{retrun COMMA; }
@@ -44,10 +50,12 @@ null     																				{return NULL; }
 ")"																						{return CLIST; }
 "["																						{return OINDEX; }
 "]"																						{return CINDEX; } 
-(true|false) 																		{return BOOLEAN; }
+
+												/* Literal lexemes */
+(true|false) 																		{return BOOLEAN;}													
 \'[a-z] | [A-Z]\'      															    {return CHAR; }
 (\-)?[1-9][0-9]* | (0x|0X)[0-9|A-F]+   								{return INTEGER; }
 (\-)?[0-9]*(\.)?[0-9]*														    {return REAL; }
-\"[a-zA-Z0-9 | (\ )]*(\\n)*\"				        							{return STRING; }
+\"(\\.|[^"\\])*\"				        												{return STRING; }
 .   																				    {return yytext[0]; }
 %%
