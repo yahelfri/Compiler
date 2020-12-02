@@ -13,6 +13,10 @@
 	node* mknode(char *token, node *left, node *right);
 	void printtree(node *tree);
 	int func(char* a, char* b, char *c);
+	void printTabs(int n);
+
+	int printlevel = 0;
+	int tabs_spaces = 0;
 	#define YYSTYPE struct node*
 %}
 
@@ -26,16 +30,16 @@
 
 %%
 //s: s | IDENTIFIER {$$ = $1} | {$$ = NULL};
-/*add all GRAMMERS*/
+
 //s: exp {printtree($1); };
 //exp: exp PLUS exp {$$ = mknode("+", $1, $3);}| INTEGER {$$ = mknode(yylval, NULL, NULL);} ;
 project: program {printtree($1); };
 
-program: procedure { $$ = mknode("CODE", $1, NULL);}| {$$ = NULL;};
+program: procedure { $$ = mknode("(CODE", $1, mknode(")", NULL, NULL));}| {$$ = NULL;};
 
 procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
-	$$ = mknode("PROC", mknode($2, NULL, NULL), mknode("ARGS", $4, $7));
+	$$ = mknode("(PROC", mknode($2, NULL, NULL), mknode(")", mknode("", $4, $7), NULL));
 };
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
@@ -58,7 +62,7 @@ types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);}
 
 procedure_body: program declarations statements
 {
-	$$ = mknode("(BODY", mknode("", $1, NULL), mknode("", $2, mknode(")", NULL, NULL)));
+	$$ = mknode("(BODY", mknode("", $1, NULL), mknode("", $2, mknode("", $3, mknode(")", NULL, NULL))));
 };
 
 declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
@@ -83,8 +87,24 @@ statment:
 	{
 		$$ = mknode("(WHILE", mknode("(", $3, mknode(")", NULL, NULL)), mknode(")", $5, NULL));
 	}
+	| assignment ENDLINE {$$ = mknode("", $1, NULL);}
+	| expression ENDLINE {$$ = $1;}
+	| block {$$ = $1;};
 	/* ADD FOR LOOP */;
-statment_block: statment {$$ = $1;} | RETURN expression ENDLINE {$$ = mknode("RETURN", $2, NULL);};
+statment_block: statment {$$ = $1;} | RETURN expression ENDLINE {$$ = mknode("RET", $2, NULL);};
+
+block: OBLOCK declarations statements return_statement CBLOCK
+	{
+		$$ = mknode("(BLOCK", $2, mknode("", $3, mknode("", $4, mknode(")", NULL, NULL))));
+	};
+
+return_statement: RETURN expression ENDLINE {$$ = mknode("RET", $2, NULL);} | {$$ = NULL;};
+
+assignment: lhs ASIGN expression {$$ = mknode("(=", $1, mknode("(", $3, mknode(")", NULL, NULL)));};
+
+lhs: IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);};
+	// ADD DEFERENCE statements
 
 expression: 
 	//Logical operators
@@ -150,7 +170,43 @@ node* mknode(char *token, node *left, node *right)
 /* printing the tree */
 void printtree(node* tree)
 {
-	printf("%s\n", tree->token);
+	// printf("%s\n", tree->token);
+
+	//if node has no sons and......
+	if(tree && (!tree->left && !tree->right) == 0 && strcmp(tree->token, "(") == 0 ||
+		strcmp(tree->token, ")") == 0)){
+		printf("%s ", tree->token);
+	}else if(strcmp(tree->token, "(CODE") == 0){
+		printf("%s\n", tree->token);
+		tabs_spaces++;
+		printTabs(tabs_spaces);
+	} else if(strcmp(tree->token, "(PROC")){
+		printf("%s\n", tree->token);
+	} else if(strcmp(tree->token, "(ARGS")){
+		printf("%s\n", tree->token);
+		tabs_spaces++;
+		printTabs(tabs_spaces);
+	} else if(strcmp(tree->token, "BOOLEAN") == 0 || strcmp(tree->token, "CHAR") == 0 ||
+		strcmp(tree->token, "INTEGER") == 0 || strcmp(tree->token, "REAL") == 0 ||
+		strcmp(tree->token, "STRING") == 0|| strcmp(tree->token, "INT*") == 0||
+		strcmp(tree->token, "CHAR*") == 0|| strcmp(tree->token, "REAL*") == 0){
+		printf("%s ", tree->token);
+	} else if(strcmp(tree->token, ")")){
+		tabs_spaces--;
+		printTabs(tabs_spaces);
+		printf("%s\n", tree->token);
+	} else if(strcmp(tree->token, "(BODY") == 0){
+		printf("%s\n", tree->token);
+		tabs_spaces++;
+		printTabs(tabs_spaces);
+	} else if(strcmp(tree->token, ("(IF") == 0) || strcmp(tree->token, "(IF-ELSE") == 0 ||
+		strcmp(tree->token, "(WHILE") == 0){
+		printf("%s\n", tree->token);
+		tabs_spaces++;
+		printTabs(tabs_spaces);
+	}
+
+
 	if(tree->left)
 	{
 		printtree(tree->left);
@@ -158,6 +214,13 @@ void printtree(node* tree)
 	if(tree->right)
 	{
 		printtree(tree->right);
+	}
+}
+
+void printTabs(int n)
+{
+	for(int i = 0; i < n; i++){
+		printf("	");
 	}
 }
 
