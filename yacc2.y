@@ -26,7 +26,7 @@
 
 %%
 //s: s | IDENTIFIER {$$ = $1} | {$$ = NULL};
-
+/*add all GRAMMERS*/
 //s: exp {printtree($1); };
 //exp: exp PLUS exp {$$ = mknode("+", $1, $3);}| INTEGER {$$ = mknode(yylval, NULL, NULL);} ;
 project: program {printtree($1); };

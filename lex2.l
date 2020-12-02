@@ -50,7 +50,7 @@ Main			    {return MAIN;}
 ","	{return COMMA;}
 ":" {return COLONS;}
 ";" {return ENDLINE;}
-
+/* add all lexicals*/
 true	{return BOOLEANTRUE;}	
 false {return BOOLEANFALSE;}													
 \'.\'   {return CHAR;}
