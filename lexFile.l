@@ -57,7 +57,7 @@ Main			    {return MAIN; }
 (\-)?[1-9][0-9]* | (0x|0X)[0-9|A-F]+  {return INTEGER; }
 (\-)?[0-9]*(\.)?[0-9]*				           {return REAL; }
 \"(\\.|[^"\\])*\"		{return STRING; }
-"/""%".*"%""/"  {retrun COMMENT; }
+"/""%".*"%""/"  {return COMMENT; }
 [A-Za-z][a-zA-Z0-9_]*  {return IDENTIFIER; }
 .   					{return yytext[0]; }
 %%
