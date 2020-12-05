@@ -37,7 +37,7 @@ Main			    {return MAIN; }
 "+"      			{return PLUS; }
 "*"      			{return MULTIPLY; }
 "&"      			{return ADDRESS; }
-"^"      			{return DEREFERENCE; }
+"^"      			{return VALUE; }
 
 			/* Other lexemes */
 ";"						{return ENDLIINE; }
