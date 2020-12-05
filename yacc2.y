@@ -77,8 +77,8 @@ declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 
 declare: VAR vars COLONS types comment ENDLINE comment
 {
-	$$ = mknode("VAR", $4, $2);
-} | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $4, $2);};
+	$$ = mknode("VAR", $4, $2);			
+} | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $2, mknode("[", $6, mknode("]", NULL, NULL)));};
 
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
  
