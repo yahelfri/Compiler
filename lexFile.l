@@ -42,7 +42,7 @@ Main			    {return MAIN; }
 			/* Other lexemes */
 ";"						{return ENDLIINE; }
 ":"						{return COLONS; }
-","						{retrun COMMA; }
+","						{return COMMA; }
 "|"						{return ABSOLUTE; }
 "{"						{return OBLOCK; }
 "}"						{return CBLOCK; }
