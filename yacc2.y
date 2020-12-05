@@ -28,7 +28,7 @@
 %token COLONS COMMA ENDLINE COMMENT
 
 %%
-project: comment program {printtree($2); };
+project: comment program {printtree($2);};
 
 program: procedures main {($$ = mknode("CODE", $1, $2));};
 
@@ -44,7 +44,9 @@ procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
 } | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN types OBLOCK procedure_body return_statement CBLOCK
 {
-	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL), mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
+	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL
+
+		), mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
 };
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
@@ -76,7 +78,7 @@ declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 declare: VAR vars COLONS types comment ENDLINE comment
 {
 	$$ = mknode("VAR", $4, $2);
-};
+} | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $4, $2);};
 
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
  
@@ -169,7 +171,6 @@ call_expression: OLIST call_expression_args CLIST {$$ = $2;};
 
 call_expression_args: expression COMMA call_expression_args {$$ = mknode("", $1, mknode(",", $3, NULL));}
 	| expression {$$ = mknode("", $1, NULL);} | {$$ = NULL;};
-
 
 %%
 #include "lex.yy.c"
@@ -295,6 +296,6 @@ int yyerror(char *err)
 	int yydebug = 1; 
 	fflush(stdout);
 	fprintf(stderr, "Error: %s\n" , err);
-	fprintf(stderr, "missing missing a char before '%s' at line %d\n", yytext, yylineno);
+	fprintf(stderr, "missing a char before '%s' at line %d\n", yytext, yylineno);
 	return 0;
 }
