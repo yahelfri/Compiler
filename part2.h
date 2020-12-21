@@ -12,9 +12,10 @@ typedef struct Scope {
 	char *name;
 	char *type;
 	char *returnType;
-	int parametersNumber;
-	argument *arguments;
-	declaration *declarations;
+	argument **arguments;
+	int argumentSize;
+	declaration **declarations;
+	int declarationSize;
 } scope;
 
 
@@ -22,14 +23,14 @@ typedef struct Stcak{
 	scope *currentScope;
 } stack;
 
-void createScope(char *name, char *type, char *returnType, int parametersNum, argument *arguments, declaration *declarations);
-void printStack();
+void createScope(char *name, char *type, char *returnType);
 void push(scope *sp);
-stack *pop();
-stack *peak();
+scope *pop();
+scope *peak();
+void addDeclaration(char *type, char *name);
+void addArguments(char *type);
+void printStack();
 
-
-// void createScope();
 
 // main() {
 // 	int ab;

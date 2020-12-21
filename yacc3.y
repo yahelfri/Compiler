@@ -29,13 +29,14 @@
 %token COLONS COMMA ENDLINE COMMENT
 
 %%
-project: comment program {printtree($2);};
+//printtree($2);
+project: comment program { printtree($2); printStack();};
 
 program: procedures main {($$ = mknode("CODE", $1, $2));};
 
 main: PROC MAIN OLIST CLIST OBLOCK procedure_body CBLOCK
 {
-	createScope("MAIN", "PROC", NULL, NULL, NULL, NULL);
+	createScope("MAIN", "PROC", "NULL");
 	$$ = mknode("PROC", mknode("MAIN", mknode("\n", NULL, NULL), NULL), mknode("ARGS", NULL, $6));
 } | {$$ = NULL;};
 
@@ -53,7 +54,8 @@ procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
 
-para_list: vars COLONS types  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
+para_list: vars COLONS types  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));
+								addDeclaration($3, $1);}
 	| para_list ENDLINE comment para_list {$$ = mknode("", $1, mknode("", $4, NULL));};
 
 vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);}
