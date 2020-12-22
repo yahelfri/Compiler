@@ -29,10 +29,9 @@
 %token COLONS COMMA ENDLINE COMMENT
 
 %%
-//printtree($2);
 project: comment program { printtree($2); printStack();};
 
-program: procedures main {($$ = mknode("CODE", $1, $2));};
+program: main procedures {($$ = mknode("CODE", $1, $2));};
 
 main: PROC MAIN OLIST CLIST OBLOCK procedure_body CBLOCK
 {
@@ -44,44 +43,44 @@ procedures: procedures procedure comment {$$ = mknode("", $1, $2);} | {$$ = NULL
 
 procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
+	createScope($2->token, "PROC", "NULL");
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
 } | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN types OBLOCK procedure_body return_statement CBLOCK
 {
-	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL
-
-		), mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
+	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL),
+	 mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
+	createScope("name", $2, $8->token);
 };
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
 
-para_list: vars COLONS types  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));
-								addDeclaration($3, $1);}
+para_list: vars COLONS types  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
 	| para_list ENDLINE comment para_list {$$ = mknode("", $1, mknode("", $4, NULL));};
 
-vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);};
+vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addDeclaration(NULL, $1);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addDeclaration(NULL, $1);};
 
-types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);}
-	| CHART {$$ = mknode("CHAR", NULL, NULL);}
-	| INTT {$$ = mknode("INTEGER", NULL, NULL);}
-	| REALT {$$ = mknode("REAL", NULL, NULL);}
-	| STRINGT {$$ = mknode("STRING", NULL, NULL);}
-	| INTP {$$ = mknode("INT*", NULL, NULL);}
-	| CHARP {$$ = mknode("CHAR*", NULL, NULL);}
-	| REALP {$$ = mknode("REAL*", NULL, NULL);};
+types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);setType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);setType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);setType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);setType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);setType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);setType("REAL*");};
 
 comment: COMMENT comment | ;
 
 procedure_body: comment procedures declarations statements
 {
-	$$ = mknode("(BODY\n	", mknode("", $2, NULL), mknode("", $3, mknode("", $4, mknode("}", NULL, NULL))));
+	$$ = mknode("(BODY\n", mknode("", $2, NULL), mknode("", $3, mknode("", $4, mknode("}", NULL, NULL))));
 };
 
 declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 
 declare: VAR vars COLONS types comment ENDLINE comment
 {
-	$$ = mknode("VAR", $4, $2);			
+	$$ = mknode("VAR", $4, $2);addDeclaration(NULL, NULL);		
 } | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $2, mknode("[", $6, mknode("]", NULL, NULL)));};
 
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};

@@ -1,4 +1,4 @@
 proc Main() {
-	var a, b, c: int;
-	var b: int;
+	var a:bool;
+	var b:char;
 }

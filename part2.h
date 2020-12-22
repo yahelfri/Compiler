@@ -30,6 +30,7 @@ scope *peak();
 void addDeclaration(char *type, char *name);
 void addArguments(char *type);
 void printStack();
+void setType(char *type);
 
 
 // main() {
