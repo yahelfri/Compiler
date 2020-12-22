@@ -5,15 +5,34 @@
 #include <stdbool.h>
 #include "part2.h"
 
+/* ****** Functions Declarations ****** */
+bool checkVarAppearance(char *name, declaration **holder, int size);
+bool checkFuncProcAppearance(char *name,  char *type, declaration **holder, int size);
+void push(scope *sp);
+scope* pop();
+scope* peak();
+void FreeMemory();
+void clearMemory();
+void addProcFunc(char *name, char *type);
+void addVar(char *varName);
+void setVarType(char *type);
+void createScope(char *name, char *type, char *typeReturn); 
+void addArgVar(char *argVar);
+void addArgVar(char *argVar);
+void setArgsType(char *type);
+void setRetType(char *returnType);
+bool checkVarAppearance(char *name, declaration **holder, int size);
+bool checkFuncProcAppearance(char *name,  char *type, declaration **holder, int size);
+void printStack();
+
+
+/* ****** Global Variables Declarations ****** */
 stack *scopesStack = NULL;
 declaration **declarations = NULL;
 declaration **arguments = NULL;
 int declarationSize = 0;
 int argumentSize = 0;
 char *retType = NULL;
-
-bool checkVarAppearance(char *name, declaration **holder, int size);
-
 
 void push(scope *sp) {
 	if(scopesStack && scopesStack->currentScope){
@@ -33,7 +52,10 @@ scope* pop(){
 }
 
 scope* peak(){
-	return scopesStack->currentScope;
+	if(scopesStack && scopesStack->currentScope){
+		return scopesStack->currentScope;
+	}
+	return NULL;
 }
 
 void FreeMemory(){	
@@ -98,6 +120,29 @@ void createScope(char *name, char *type, char *typeReturn) {
 	clearMemory();
 }
 
+void addProcFunc(char *name, char *type){
+	scope *temp = peak();
+	printf("ADD PROC FUNC name: %s \n", name);
+	if(temp && checkFuncProcAppearance(name, type, temp->declarations, temp->declarationSize)){
+		printf("Error: %s name '%s' already exist in the same scope!\n", type, name);
+		exit(EXIT_FAILURE);
+		FreeMemory();
+	}
+	declaration *newDeclare = (declaration*)malloc(sizeof(declaration));
+	newDeclare->name = (char*)malloc(sizeof(name) + 1);
+	strcpy(newDeclare->name, name);
+	newDeclare->type = (char*)malloc(sizeof(type) + 1);
+	strcpy(newDeclare->type, type);
+	if(argumentSize > 0){
+		declarationSize += 1;
+		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
+	} else{
+		declarations = (declaration**)malloc(sizeof(declaration*));
+		declarationSize += 1;
+	}
+	declarations[declarationSize - 1] = newDeclare;
+}
+
 void addVar(char *varName){
 	if(checkVarAppearance(varName, declarations, declarationSize)){
 		printf("Error: variable name '%s' already exist in the same scope!\n", varName);
@@ -108,9 +153,8 @@ void addVar(char *varName){
 	newDeclare->name = (char*)malloc(sizeof(varName) + 1);
 	strcpy(newDeclare->name, varName);
 	if(declarationSize > 0){
-		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
-		
 		declarationSize += 1;
+		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
 	} else{
 		declarations = (declaration**)malloc(sizeof(declaration*));
 		declarationSize += 1;
@@ -137,8 +181,8 @@ void addArgVar(char *argVar){
 	newArgument->name = (char*)malloc(sizeof(argVar) + 1);
 	strcpy(newArgument->name, argVar);
 	if(argumentSize > 0){
-		arguments = (declaration**)realloc(arguments, argumentSize); //reallocate memory for the new declaration
 		argumentSize += 1;
+		arguments = (declaration**)realloc(arguments, argumentSize); //reallocate memory for the new declaration
 	} else{
 		arguments = (declaration**)malloc(sizeof(declaration*));
 		argumentSize += 1;
@@ -169,13 +213,18 @@ bool checkVarAppearance(char *name, declaration **holder, int size){
 	return false;
 }
 
-// bool checkFuncProcAppearance(char *name, char *type){
-// 	scope *temp = peak();
-// 	while(temp && !strcmp(temp->name, name) == 0 && !strcmp(temp->type, type) == 0){
+bool checkFuncProcAppearance(char *name,  char *type, declaration **holder, int size){
+	for(int i = size - 1; i >= 0; i--){
+		if(strcmp(holder[i]->name, name) == 0 && strcmp(holder[i]->type, type) == 0){
+			return true;
+		}
+	}
+	return false;
+}
 
-// 	}
-// }
-
+void func(char *str){
+	printf("FROM FUNS: %s\n", str);
+}
 
 void printStack(){
 	printf("\n======================================================\n\n");

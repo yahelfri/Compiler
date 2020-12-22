@@ -30,20 +30,5 @@ void addArguments(char *type);
 void printStack();
 void setArgsType(char *type);
 void addArgVar(char *argVar);
-
-
-// main() {
-// 	int ab;
-// 	proc foo(x, y, z: int; f: real){
-// 		if(x > y){
-// 			x = x + f;
-// 		} else{
-// 			y = x+ y + z;
-// 		}
-// 	}
-
-// 	func goo() return char{
-// 		ab = 5;
-// 		return 'a';
-// 	}
-// }
+void addProcFunc(char *name, char *type);
+void func(char *str);

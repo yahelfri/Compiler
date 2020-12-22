@@ -13,7 +13,6 @@
 	
 	node* mknode(char *token, node *left, node *right);
 	void printtree(node *tree);
-	int func(char* a, char* b, char *c);
 	void printTabs(int n);
 
 	int level = 0;
@@ -43,13 +42,15 @@ procedures: procedures procedure comment {$$ = mknode("", $1, $2);} | {$$ = NULL
 
 procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
-	createScope($2->token, "procedure", "NULL");
+	addProcFunc($2, "procedure");
+	createScope($2, "procedure", "NULL");
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
 } | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN retTypes OBLOCK procedure_body return_statement CBLOCK
 {
+	addProcFunc($2, "function");
+	createScope($2, "function", $8->token);
 	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL),
 	 mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
-	createScope($2, "function", $8->token);
 };
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
@@ -57,7 +58,7 @@ parameters: para_list {$$ = $1;} | {$$ = NULL;};
 para_list: argsVars COLONS argsTypes  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
 	| para_list ENDLINE comment para_list {$$ = mknode("", $1, mknode("", $4, NULL));};
 
-argsVars: IDENTIFIER COMMA argsVars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addArgVar( $1);}
+argsVars: IDENTIFIER COMMA argsVars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addArgVar($1);}
 	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addArgVar($1);};
 
 vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addVar( $1);}
@@ -92,7 +93,7 @@ types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setVarType("BOOLEAN");}
 
 comment: COMMENT comment | ;
 
-procedure_body: comment procedures declarations statements
+procedure_body: comment procedures declarations statements procedures
 {
 	$$ = mknode("(BODY\n", mknode("", $2, NULL), mknode("", $3, mknode("", $4, mknode("}", NULL, NULL))));
 };
@@ -323,30 +324,3 @@ int yyerror(char *err)
 	fprintf(stderr, "missing a char before '%s' at line %d\n", yytext, yylineno);
 	return 0;
 }
-
-// void print()
-// {
-// 	for(k = 0; k < i; k++)
-// 	{
-// 		printf("%d ", type_arr[k]);
-// 		printf("%s\n", id_arr[k]);
-// 	}
-// }
-
-// void test()
-// {
-// 	for(k = 0; k < i; k++){
-// 		if(strcmp(id_arr[k], id) == 0){
-// 			if(flag == 0){
-// 				flag = 1;
-// 				first_type = type_arr[k];
-// 			} else {
-// 				if(first_type == type_arr[k]){
-// 					printf("DECLARATION ERROR %s\n", id);
-// 				} else {
-// 					printf("REDECLARATION %s\n", id);
-// 				}
-// 			}
-// 		}
-// 	}
-// }
