@@ -1,7 +1,3 @@
-typedef struct Argument{
-	char *type;
-} argument;
-
 typedef struct Declaration{
 	char *type;
 	char *name;
@@ -12,7 +8,7 @@ typedef struct Scope {
 	char *name;
 	char *type;
 	char *returnType;
-	argument **arguments;
+	declaration **arguments;
 	int argumentSize;
 	declaration **declarations;
 	int declarationSize;
@@ -23,14 +19,17 @@ typedef struct Stcak{
 	scope *currentScope;
 } stack;
 
-void createScope(char *name, char *type, char *returnType);
 void push(scope *sp);
 scope *pop();
 scope *peak();
-void addDeclaration(char *type, char *name);
+void setVarType(char *type);
+void setRetType(char *returnType);
+void addVar(char *varName);
+void createScope(char *name, char *type, char *returnType);
 void addArguments(char *type);
 void printStack();
-void setType(char *type);
+void setArgsType(char *type);
+void addArgVar(char *argVar);
 
 
 // main() {

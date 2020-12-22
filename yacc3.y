@@ -43,31 +43,52 @@ procedures: procedures procedure comment {$$ = mknode("", $1, $2);} | {$$ = NULL
 
 procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
-	createScope($2->token, "PROC", "NULL");
+	createScope($2->token, "procedure", "NULL");
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
-} | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN types OBLOCK procedure_body return_statement CBLOCK
+} | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN retTypes OBLOCK procedure_body return_statement CBLOCK
 {
 	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL),
 	 mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
-	createScope("name", $2, $8->token);
+	createScope($2, "function", $8->token);
 };
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
 
-para_list: vars COLONS types  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
+para_list: argsVars COLONS argsTypes  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
 	| para_list ENDLINE comment para_list {$$ = mknode("", $1, mknode("", $4, NULL));};
 
-vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addDeclaration(NULL, $1);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addDeclaration(NULL, $1);};
+argsVars: IDENTIFIER COMMA argsVars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addArgVar( $1);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addArgVar($1);};
 
-types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setType("BOOLEAN");}
-	| CHART {$$ = mknode("CHAR", NULL, NULL);setType("CHAR");}
-	| INTT {$$ = mknode("INTEGER", NULL, NULL);setType("INTEGER");}
-	| REALT {$$ = mknode("REAL", NULL, NULL);setType("REAL");}
-	| STRINGT {$$ = mknode("STRING", NULL, NULL);setType("STRING");}
-	| INTP {$$ = mknode("INT*", NULL, NULL);setType("INT*");}
-	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setType("CHAR*");}
-	| REALP {$$ = mknode("REAL*", NULL, NULL);setType("REAL*");};
+vars: IDENTIFIER COMMA vars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addVar( $1);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addVar($1);};
+
+retTypes: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setRetType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);setRetType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);setRetType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);setRetType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);setRetType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);setRetType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setRetType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);setRetType("REAL*");};
+
+argsTypes: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setArgsType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);setArgsType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);setArgsType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);setArgsType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);setArgsType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);setArgsType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setArgsType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);setArgsType("REAL*");};
+
+types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL); setVarType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);setVarType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);setVarType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);setVarType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);setVarType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);setVarType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setVarType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);setVarType("REAL*");};
 
 comment: COMMENT comment | ;
 
@@ -80,7 +101,7 @@ declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 
 declare: VAR vars COLONS types comment ENDLINE comment
 {
-	$$ = mknode("VAR", $4, $2);addDeclaration(NULL, NULL);		
+	$$ = mknode("VAR", $4, $2);	
 } | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $2, mknode("[", $6, mknode("]", NULL, NULL)));};
 
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};

@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
 #include "part2.h"
 
 stack *scopesStack = NULL;
 declaration **declarations = NULL;
-argument **arguments = NULL;
+declaration **arguments = NULL;
 int declarationSize = 0;
 int argumentSize = 0;
-char *type_ = NULL;
+char *retType = NULL;
+
+bool checkVarAppearance(char *name, declaration **holder, int size);
 
 
 void push(scope *sp) {
@@ -32,42 +36,45 @@ scope* peak(){
 	return scopesStack->currentScope;
 }
 
-void FreeMemory(){
-	printf("FreeMemory\n");
+void FreeMemory(){	
+	for(int i = argumentSize - 1; i >= 0; i--){
+		free(arguments[i]->type);
+		free(arguments[i]);
+	}
+	for(int i = declarationSize - 1; i >= 0; i--){
+		free(declarations[i]->type);
+		free(declarations[i]);
+	}
+	if(retType){
+		free(retType);
+	}
+	free(arguments);
+	free(declarations);
+}
 
-	// for(int i = argumentSize - 1; i >= 0; i--){
-	// 	free(arguments[i]->type);
-	// 	free(arguments[i]);
-	// }
-	
-	// for(int i = declarationSize - 1; i >= 0; i--){
-	// 	free(declarations[i]->type);
-	// 	free(declarations[i]);
-	// }
-
-	// if(type_){
-	// 	free(type_);
-	// }
-	
-	// free(arguments);
-	// free(declarations);
+void clearMemory(){
 	arguments = NULL;
 	declarations = NULL;
-	type_ = NULL;
+	retType = NULL;
 	declarationSize = 0;
 	argumentSize = 0;
 }
 
-
 void createScope(char *name, char *type, char *typeReturn) {
+	// if(checkFuncProcAppearance(name, type)){
+	// 	printf("Error: %s name '%s' already exist!\n", type, varName);
+	// 	exit(EXIT_FAILURE);
+	// 	FreeMemory();
+	// }
 	printf("createScope\n");
+	printf("Name is: %s\n", name);
 
 	scope *newScope = (scope*)malloc(sizeof(scope));
 	newScope->nextScope = NULL;
-	printf("1\n");
 	newScope->name = (char*)malloc(sizeof(name) + 1);
-	
 	strcpy(newScope->name,name);
+	printf("1\n");
+
 	newScope->type = (char*)malloc(sizeof(type) + 1);
 	printf("2\n");
 	strcpy(newScope->type, type);
@@ -77,7 +84,7 @@ void createScope(char *name, char *type, char *typeReturn) {
 		printf("4\n");
 		strcpy(newScope->returnType, typeReturn);
 	} else { // need to check the else part because of setType (types in GRAMMER)
-		newScope->returnType = type_;
+		newScope->returnType = retType;
 		printf("5 ==> %s\n", newScope->returnType);
 	}
 	newScope->argumentSize = argumentSize;
@@ -88,60 +95,87 @@ void createScope(char *name, char *type, char *typeReturn) {
 	newScope->arguments = arguments;
 	newScope->declarations = declarations;
 	push(newScope);
-	FreeMemory();
+	clearMemory();
 }
 
-
-
-
-void addDeclaration(char *type, char *name){
-	printf("addDeclaration\n");
-
-	if(!type && name){
-		declarations = (declaration**)malloc(sizeof(declaration*));
-		declaration *newDeclare = (declaration*)malloc(sizeof(declaration));
-		newDeclare->name = (char*)malloc(sizeof(name) + 1);
-		strcpy(newDeclare->name, name);
+void addVar(char *varName){
+	if(checkVarAppearance(varName, declarations, declarationSize)){
+		printf("Error: variable name '%s' already exist in the same scope!\n", varName);
+		exit(EXIT_FAILURE);
+		FreeMemory();
+	}
+	declaration *newDeclare = (declaration*)malloc(sizeof(declaration));
+	newDeclare->name = (char*)malloc(sizeof(varName) + 1);
+	strcpy(newDeclare->name, varName);
+	if(declarationSize > 0){
+		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
+		
 		declarationSize += 1;
-		if(declarationSize - 1 > 0){
-			declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
-		}
-		printf("from add declarations name: %s\n", newDeclare->name);
-		declarations[declarationSize - 1] = newDeclare;
-	} else if(type && !name) {
-		for(int i = declarationSize - 1; i >= 0; i--){
-			if(!declarations[i]->type){
-				declarations[i]->type = (char*)malloc(sizeof(type) + 1);
-				strcpy(declarations[i]->type, type);
-				printf("from add declarations type:%s\n", declarations[i]->type);
-			}
-		}
-	} else if(!type && !name){
-		for(int i = declarationSize - 1; i >= 0; i--){
-			if(!declarations[i]->type){
-				declarations[i]->type = (char*)malloc(sizeof(type) + 1);
-				strcpy(declarations[i]->type, type_);
-				printf("from add declarations type:%s\n", declarations[i]->type);
-			}
+	} else{
+		declarations = (declaration**)malloc(sizeof(declaration*));
+		declarationSize += 1;
+	}
+	declarations[declarationSize - 1] = newDeclare;
+}
+
+void setVarType(char *type){
+	for(int i = declarationSize - 1; i >= 0; i--){
+		if(declarations[i]->name && !declarations[i]->type){
+			declarations[i]->type = (char*)malloc(sizeof(type) + 1);
+			strcpy(declarations[i]->type, type);
 		}
 	}
 }
 
-void addArguments(char *type){
-	argument *newArgs = (argument*)malloc(sizeof(argument));
-	newArgs->type = (char*)malloc(sizeof(type) + 1);
-	strcpy(newArgs->type, type);
-	scope *temp = peak();
-	temp->argumentSize += 1;
-	temp->arguments = (argument**)realloc(temp->arguments, temp->argumentSize);
-	temp->arguments[temp->argumentSize] = newArgs;
+void addArgVar(char *argVar){
+	if(checkVarAppearance(argVar, arguments, argumentSize)){
+		printf("Error: variable name '%s' already exist in the same scope!\n", argVar);
+		exit(EXIT_FAILURE);
+		FreeMemory();
+	}
+	declaration *newArgument = (declaration*)malloc(sizeof(declaration));
+	newArgument->name = (char*)malloc(sizeof(argVar) + 1);
+	strcpy(newArgument->name, argVar);
+	if(argumentSize > 0){
+		arguments = (declaration**)realloc(arguments, argumentSize); //reallocate memory for the new declaration
+		argumentSize += 1;
+	} else{
+		arguments = (declaration**)malloc(sizeof(declaration*));
+		argumentSize += 1;
+	}
+	arguments[argumentSize - 1] = newArgument;
 }
 
-void setType(char *type){
-	printf("6 TYPE IS: %s\n", type);
-	type_ = (char*)malloc(sizeof(type) + 1);
-	strcpy(type_, type);
+void setArgsType(char *type){
+	for(int i = argumentSize - 1; i >= 0; i--){
+		if(arguments[i]->name && !arguments[i]->type){
+			arguments[i]->type = (char*)malloc(sizeof(type) + 1);
+			strcpy(arguments[i]->type, type);
+		}
+	}
 }
+
+void setRetType(char *returnType){
+	retType = (char*)malloc(sizeof(returnType) + 1);
+	strcpy(retType, returnType);
+}
+
+bool checkVarAppearance(char *name, declaration **holder, int size){
+	for(int i = size - 1; i >= 0; i--){
+		if(strcmp(holder[i]->name, name) == 0){
+			return true;
+		}
+	}
+	return false;
+}
+
+// bool checkFuncProcAppearance(char *name, char *type){
+// 	scope *temp = peak();
+// 	while(temp && !strcmp(temp->name, name) == 0 && !strcmp(temp->type, type) == 0){
+
+// 	}
+// }
+
 
 void printStack(){
 	printf("\n======================================================\n\n");
@@ -155,17 +189,15 @@ void printStack(){
 		for(int i = temp->declarationSize - 1; i >= 0; i--){
 			if(temp->declarations[i]->type){
 				printf("%s\n",temp->declarations[i]->type);
-			}
-			if( temp->declarations[i]->name){
-				
 				printf("%s\n", temp->declarations[i]->name);
 			}
 		}
-		;
 		for(int i = temp->argumentSize - 1; i >= 0; i--){
 			printf("%s\n", temp->arguments[i]->type);
+			printf("%s\n", temp->arguments[i]->name);
 		}
 		printf("\n\n");
 		temp = temp->nextScope;
 	}
+	FreeMemory();
 }
