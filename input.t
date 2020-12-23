@@ -1,13 +1,8 @@
-proc Main() {
+func functionName(i: int) return int{
+	var b:int;
+	func insider(j: int) return int{
 
-	func functionName(i: int) return int{
-		func insider(j: int) return int{
-
-		}
+		var b:int;
 	}
-	func functionName(i: int) return int{
-
-	}
-	
 
 }

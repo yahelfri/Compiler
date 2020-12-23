@@ -30,9 +30,12 @@ void printStack();
 stack *scopesStack = NULL;
 declaration **declarations = NULL;
 declaration **arguments = NULL;
+funcProcCall *funcProcCalls = NULL;
+error *errors = NULL;
 int declarationSize = 0;
 int argumentSize = 0;
 char *retType = NULL;
+
 
 void push(scope *sp) {
 	if(scopesStack && scopesStack->currentScope){
@@ -72,12 +75,15 @@ void FreeMemory(){
 	}
 	free(arguments);
 	free(declarations);
+	//ADD FREE MEMORY funcProcCalls
+
 }
 
 void clearMemory(){
 	arguments = NULL;
 	declarations = NULL;
 	retType = NULL;
+	funcProcCalls = NULL;
 	declarationSize = 0;
 	argumentSize = 0;
 }
@@ -134,11 +140,11 @@ void addProcFunc(char *name, char *type){
 	newDeclare->type = (char*)malloc(sizeof(type) + 1);
 	strcpy(newDeclare->type, type);
 	if(argumentSize > 0){
-		declarationSize += 1;
+		declarationSize++;
 		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
 	} else{
 		declarations = (declaration**)malloc(sizeof(declaration*));
-		declarationSize += 1;
+		declarationSize++;
 	}
 	declarations[declarationSize - 1] = newDeclare;
 }
@@ -146,18 +152,18 @@ void addProcFunc(char *name, char *type){
 void addVar(char *varName){
 	if(checkVarAppearance(varName, declarations, declarationSize)){
 		printf("Error: variable name '%s' already exist in the same scope!\n", varName);
-		exit(EXIT_FAILURE);
 		FreeMemory();
+		exit(EXIT_FAILURE);
 	}
 	declaration *newDeclare = (declaration*)malloc(sizeof(declaration));
 	newDeclare->name = (char*)malloc(sizeof(varName) + 1);
 	strcpy(newDeclare->name, varName);
 	if(declarationSize > 0){
-		declarationSize += 1;
+		declarationSize++;
 		declarations = (declaration**)realloc(declarations, declarationSize); //reallocate memory for the new declaration
 	} else{
 		declarations = (declaration**)malloc(sizeof(declaration*));
-		declarationSize += 1;
+		declarationSize++;
 	}
 	declarations[declarationSize - 1] = newDeclare;
 }
@@ -181,11 +187,11 @@ void addArgVar(char *argVar){
 	newArgument->name = (char*)malloc(sizeof(argVar) + 1);
 	strcpy(newArgument->name, argVar);
 	if(argumentSize > 0){
-		argumentSize += 1;
+		argumentSize++;
 		arguments = (declaration**)realloc(arguments, argumentSize); //reallocate memory for the new declaration
 	} else{
 		arguments = (declaration**)malloc(sizeof(declaration*));
-		argumentSize += 1;
+		argumentSize++;
 	}
 	arguments[argumentSize - 1] = newArgument;
 }
@@ -222,8 +228,105 @@ bool checkFuncProcAppearance(char *name,  char *type, declaration **holder, int 
 	return false;
 }
 
-void func(char *str){
-	printf("FROM FUNS: %s\n", str);
+void addFuncProcCallArgs(char *argNameType){
+	printf("add argument to function call with name: %s\n", argNameType);
+	printf("add func proc 1\n");
+	declaration *newFuncProcArg = (declaration*)malloc(sizeof(declaration));
+	newFuncProcArg->name = (char*)malloc(sizeof(argNameType) + 1);
+	strcpy(newFuncProcArg->name, argNameType);
+	if(!funcProcCalls){
+		funcProcCalls = (funcProcCall*)malloc(sizeof(funcProcCalls));
+	}
+	printf("add func proc 2\n");
+	if(funcProcCalls->argsSize > 0){
+		funcProcCalls->argsSize++;
+		funcProcCalls->args = (declaration**)realloc(funcProcCalls->args, funcProcCalls->argsSize);
+	} else{
+		funcProcCalls->args = (declaration**)malloc(sizeof(declaration*));
+		funcProcCalls->argsSize++;
+	}
+	printf("add func proc 3\n");
+	funcProcCalls->args[funcProcCalls->argsSize - 1] = newFuncProcArg;
+}
+
+bool checkFuncProcCallAppearance(char *funcProcName){
+	scope *curScope = peak();
+	/*
+		[ ] - check if the function is appear in the scope.
+			[ ] - if numnber of arguments are 0 
+			[ ] - if number of arguments are not 0
+				[ ] - check if the types are equal.
+	*/
+
+	//check if the function is not appear in the scope
+	int flag = 0;
+	char *err;
+	printf("check proc func appearance 1\n");
+	if(!(strcmp(curScope->name, funcProcName) == 0 && (strcmp(curScope->type, "function") ||
+		strcmp(curScope->type, "procedure")))){
+		errors = (error*)malloc(sizeof(error));
+		err = "is not appear in the scope!";
+		errors->errorMessage = (char*)malloc(sizeof(err) + 1);
+		strcpy(errors->errorMessage, err);
+		return false;		
+	}
+	//case function is appear in the scope
+	//and function call with 0 arguments and function declare with 0 arguments
+	if(curScope->argumentSize == 0 && funcProcCalls->argsSize == 0){
+		return true;
+	}
+	//case function is appear in the scope
+	//and function call has no the same arguments number as the function declaretion
+	printf("printing the arguments of the scope:\n");
+	for(int i = curScope->argumentSize - 1; i >= 0; i--){
+		printf("%s\n", curScope->arguments[i]->name);
+	}
+
+	if(curScope->argumentSize != funcProcCalls->argsSize){
+		errors = (error*)malloc(sizeof(error));
+		err = ",call function has not the same amount of arguments";
+		errors->errorMessage = (char*)malloc(sizeof(err) + 1);
+		strcpy(errors->errorMessage, err);
+		printf("check proc func appearance 2\n");
+		return false;
+	}
+	//case function appear in the scope
+	//and function call and function declaration has the same number of arguments
+	//need to check if the arguments are the same type
+	//case function call parameteres are varibles
+	for(int i = funcProcCalls->argsSize - 1; i >= 0; i--){
+		for(int j = declarationSize - 1; j >= 0; i--){
+			if(strcmp(funcProcCalls->args[i]->name, declarations[j]->name) == 0){
+				if(strcmp(declarations[j]->type, curScope->arguments[i]->type) != 0){
+					//case the function call has an varialbe and the variable is recognize in the scope 
+					// but it is not with the same type
+					return false;
+				}
+			}
+		}
+	}
+
+	//check if the arguments from function call is the same in the declare of the function
+	for(int i = funcProcCalls->argsSize - 1; i >= 0; i--){
+		if(strcmp(funcProcCalls->args[i]->name, curScope->arguments[i]->name) != 0){
+			return false;
+		}
+	}
+	return true;
+}
+
+void addProcFuncCall(char *funcProcName){
+	printf("add proc func call 1\n");
+	if(!funcProcCalls || !checkFuncProcCallAppearance(funcProcName)){
+		printf("add proc func call 2\n");
+		printf("Error: function/procedure name '%s' %s\n", funcProcName, errors->errorMessage);
+		FreeMemory();
+		exit(EXIT_FAILURE);
+	}
+	funcProcCalls->name = (char*)malloc(sizeof(funcProcName) + 1);
+	strcpy(funcProcCalls->name, funcProcName);
+
+	clearMemory();
 }
 
 void printStack(){

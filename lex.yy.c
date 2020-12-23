@@ -1038,7 +1038,10 @@ YY_RULE_SETUP
 {yylval = yytext; return CHAR;}
 	YY_BREAK
 case 48:
-#line 57 "lex2.l"
+YY_RULE_SETUP
+#line 56 "lex2.l"
+{yylval = yytext; return INTEGER;}
+	YY_BREAK
 case 49:
 YY_RULE_SETUP
 #line 57 "lex2.l"
@@ -1075,7 +1078,7 @@ YY_RULE_SETUP
 #line 63 "lex2.l"
 ECHO;
 	YY_BREAK
-#line 1079 "lex.yy.c"
+#line 1082 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

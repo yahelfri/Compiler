@@ -53,8 +53,8 @@ Main {return MAIN;}
 true	{return BOOLEANTRUE;}	
 false {return BOOLEANFALSE;}													
 \'.\'   {yylval = yytext; return CHAR;}
-[\-]?[1-9][0-9]* | (0x|0X)[0-9|A-F] {yylval = yytext; return INTEGER;}
-[\-]?[0-9]*[\.]?[0-9]*	{yylval = yytext; return REAL;}
+[\-]?[1-9][0-9]* {yylval = yytext; return INTEGER;}
+[\-]?[0-9]*[.]?[0-9]*	{yylval = yytext; return REAL;}
 [A-Za-z][a-zA-Z0-9_]* {yylval = strdup(yytext); return IDENTIFIER;}
 "\"[^"]*"\""		{yylval = yytext; return STRING;}
 [\n] {yylineno++;}

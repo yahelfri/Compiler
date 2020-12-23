@@ -38,7 +38,7 @@ main: PROC MAIN OLIST CLIST OBLOCK procedure_body CBLOCK
 	$$ = mknode("PROC", mknode("MAIN", mknode("\n", NULL, NULL), NULL), mknode("ARGS", NULL, $6));
 } | {$$ = NULL;};
 
-procedures: procedures procedure comment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
+procedures: procedures procedure procedure_body comment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 
 procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
@@ -170,14 +170,14 @@ expression:
 		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
 	}
 	//variables, Constants and NULL 
-	| INTEGER {$$ = mknode($1, NULL, NULL);}
-	| REAL {$$ = mknode($1, NULL, NULL);}
-	| CHAR {$$ = mknode($1, NULL, NULL);}
-	| STRING {$$ = mknode($1, NULL, NULL);}
-	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);}
-	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);}
-	| NULLL {$$ = mknode("NULL", NULL, NULL);};
+	| INTEGER {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("INTEGER");}
+	| REAL {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("REAL");}
+	| CHAR {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("CHAR");}
+	| STRING {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("STRING");}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("BOOLEANTRUE");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs("BOOLEANFALSE");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addFuncProcCallArgs($1);}
+	| NULLL {$$ = mknode("NULL", NULL, NULL);addFuncProcCallArgs("NULL");};
 
 address_expression: ADDRESS address_expression {$$ = mknode($1, $2, NULL);} | address {$$ = $1;};
 
@@ -190,7 +190,8 @@ deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NUL
 	| DEFERENCE OLIST expression CLIST {$$ = mknode("^", mknode("(", $3, NULL), mknode(")", NULL, NULL));}
 	| DEFERENCE IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));};
 
-function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));};
+function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
+	addProcFuncCall($1);};
 
 call_expression: OLIST call_expression_args CLIST {$$ = $2;};
 

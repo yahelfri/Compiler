@@ -14,10 +14,20 @@ typedef struct Scope {
 	int declarationSize;
 } scope;
 
+typedef struct FuncProcCall {
+	declaration **args;
+	int argsSize;
+	char *name;
+} funcProcCall;
+
 
 typedef struct Stcak{
 	scope *currentScope;
 } stack;
+
+typedef struct Error{
+	char *errorMessage;
+} error;
 
 void push(scope *sp);
 scope *pop();
@@ -31,4 +41,3 @@ void printStack();
 void setArgsType(char *type);
 void addArgVar(char *argVar);
 void addProcFunc(char *name, char *type);
-void func(char *str);
