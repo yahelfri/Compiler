@@ -26,32 +26,37 @@
 	INTEGER REAL STRING CHAR BOOLEANTRUE BOOLEANFALSE
 %token IDENTIFIER OBLOCK CBLOCK OLIST CLIST ABSOLUTE OINDEX CINDEX
 %token COLONS COMMA ENDLINE COMMENT
-
 %%
-project: comment program { printtree($2); printStack();};
+project: comment pushEndSign program {printGlobal();checkMain();printErrors();};
 
-program: main procedures {($$ = mknode("CODE", $1, $2));};
+pushEndSign: {pushEndSign("$$");};
 
-main: PROC MAIN OLIST CLIST OBLOCK procedure_body CBLOCK
+program: procedures {($$ = mknode("CODE", $1, NULL));};
+ 
+//main: PROC MAIN OLIST CLIST OBLOCK pushScope procedure_body CBLOCK 
+//{
+//	setScope("MAIN", "PROC", "NULL");
+//	$$ = mknode("PROC", mknode("MAIN", mknode("\n", NULL, NULL), NULL), mknode("ARGS", NULL, $6));
+//};
+
+procedures: procedures procedure procedure_body comment  {$$ = mknode("", $1, $2);} | {$$ = NULL;};
+
+procedure: PROC IDENTIFIER pushScope OLIST parameters CLIST OBLOCK procedure_body CBLOCK 
 {
-	createScope("MAIN", "PROC", "NULL");
-	$$ = mknode("PROC", mknode("MAIN", mknode("\n", NULL, NULL), NULL), mknode("ARGS", NULL, $6));
-} | {$$ = NULL;};
-
-procedures: procedures procedure procedure_body comment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
-
-procedure: PROC IDENTIFIER OLIST parameters CLIST OBLOCK procedure_body CBLOCK
-{
-	addProcFunc($2, "procedure");
-	createScope($2, "procedure", "NULL");
+	//addProcFunc($2, "procedure");
+	setScope($2, "procedure", "NULL");
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
-} | FUNC IDENTIFIER OLIST parameters CLIST comment RETURN retTypes OBLOCK procedure_body return_statement CBLOCK
+} | FUNC IDENTIFIER pushScope OLIST parameters CLIST comment RETURN retTypes OBLOCK  procedure_body return_statement CBLOCK 
 {
-	addProcFunc($2, "function");
-	createScope($2, "function", $8->token);
+	//addProcFunc($2, "function");
+	setScope($2, "function", $8->token);
 	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL),
 	 mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
 };
+
+pushScope: {pushNewScope();};
+
+//popScope: {pop();};
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
 
@@ -191,7 +196,7 @@ deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NUL
 	| DEFERENCE IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));};
 
 function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
-	addProcFuncCall($1);};
+	};
 
 call_expression: OLIST call_expression_args CLIST {$$ = $2;};
 

@@ -18,7 +18,7 @@ func {return FUNC;}
 proc {return PROC;}
 return {return RETURN;}
 null {return NULLL;}
-Main {return MAIN;}
+
 
 "&&" {return AND;}
 "/" {return DIVIDE;}

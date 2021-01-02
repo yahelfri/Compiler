@@ -1,10 +1,12 @@
 typedef struct Declaration{
 	char *type;
 	char *name;
-}declaration;
+} declaration;
 
 typedef struct Scope {
-	struct Scope *nextScope;
+	struct Scope *nextScope; // the next scope in the stack
+	struct Scope **scopes; ///all the scopes inside the current scope
+	int scopesSize;
 	char *name;
 	char *type;
 	char *returnType;
@@ -20,6 +22,9 @@ typedef struct FuncProcCall {
 	char *name;
 } funcProcCall;
 
+typedef struct Global {
+	scope **scopes;
+} global;
 
 typedef struct Stcak{
 	scope *currentScope;
@@ -30,14 +35,20 @@ typedef struct Error{
 } error;
 
 void push(scope *sp);
-scope *pop();
+void pop();
 scope *peak();
 void setVarType(char *type);
 void setRetType(char *returnType);
 void addVar(char *varName);
-void createScope(char *name, char *type, char *returnType);
+void setScope(char *name, char *type, char *returnType);
 void addArguments(char *type);
 void printStack();
 void setArgsType(char *type);
 void addArgVar(char *argVar);
-void addProcFunc(char *name, char *type);
+// void addProcFunc(char *name, char *type);
+void pushEndSign(char *sign);
+void pushNewScope();
+void popScope();
+void printGlobal();
+void printErrors();
+void checkMain();
