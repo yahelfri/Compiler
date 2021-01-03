@@ -1,8 +1,7 @@
-proc Main(){
-	var a:int;
-	a = foo();
-}
-proc foo()
+proc foo(a:int)
 {
 	
+}
+proc Main(){
+	a = 5;
 }

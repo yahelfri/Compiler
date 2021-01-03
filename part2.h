@@ -1,7 +1,6 @@
 typedef struct Declaration{
 	char *type;
 	char *name;
-	struct Declaration **arguments;
 } declaration;
 
 typedef struct Scope {
@@ -58,3 +57,4 @@ void setArgType(char *type);
 void checkMain();
 void addVar(char *varName);
 void addFuncProcCall(char *callName);
+void addFuncCallArgType(char *arg, char *type);

@@ -163,13 +163,13 @@ expression:
 		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
 	}
 	//variables, Constants and NULL 
-	| INTEGER {$$ = mknode($1, NULL, NULL);}
-	| REAL {$$ = mknode($1, NULL, NULL);}
-	| CHAR {$$ = mknode($1, NULL, NULL);}
-	| STRING {$$ = mknode($1, NULL, NULL);}
-	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);}
-	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);}
+	| INTEGER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "INTEGER");}
+	| REAL {$$ = mknode($1, NULL, NULL); addFuncCallArgType($1, "REAL");}
+	| CHAR {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "CHAR");}
+	| STRING {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "STRING");}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANTRUE");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANFALSE");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, NULL);}
 	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
 address_expression: ADDRESS address_expression {$$ = mknode($1, $2, NULL);} | address {$$ = $1;};

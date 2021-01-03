@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "part2.h"
 
+void addFuncCallArgType(char *arg, char *type);
 void addFuncProcCall(char *callName);
 void addVar(char *varName);
 void checkVar(scope *temp, char *argVar);
@@ -32,7 +33,30 @@ int globalScopeSize = 0;
 bool isMain = false;
 error **errors;
 int errorSize = 0;
+declaration **functionCallArguments;
+int functionCallSize = 0;
 
+
+
+void addFuncCallArgType(char *arg, char *type){
+	// bool isType = false;
+	// declaration *newFuncCall = (declaration*)malloc(sizeof(declaration));
+	// newFuncCall->name = (char*)malloc(sizeof(arg) + 1);
+	// if(!type){
+	// 	scope *temp = peak();
+	// 	for(int i = temp->declarationSize - 1; i >= 0; i--){
+	// 		if(strcmp(temp->declarations[i]->name, arg) == 0){
+	// 			if(temp->declarations[i]->type){
+	// 				newFuncCall->type = (char*)malloc(sizeof(temp->declarations[i]->type) + 1);
+	// 				isType = true;
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// if(!isType){
+	// 	addError("Error:")
+	// }
+}
 
 void addFuncProcCall(char *callName) {
 	scope *temp = peak();
@@ -49,7 +73,7 @@ void addFuncProcCall(char *callName) {
 	addError("Error: function/procedure call must be declared before calling!");
 }
 
-/*add var tot the var list of the scope*/
+/*add var to the var list of the scope*/
 void addVar(char *varName){
 	declaration *newVar = (declaration**)malloc(sizeof(declaration));
 	newVar->name = (char*)malloc(sizeof(varName) + 1);

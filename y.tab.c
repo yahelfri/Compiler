@@ -1997,43 +1997,43 @@ yyreduce:
 
   case 77:
 #line 166 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), "INTEGER");}
 #line 2002 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
 #line 167 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL); addFuncCallArgType((yyvsp[0]), "REAL");}
 #line 2008 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
 #line 168 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), "CHAR");}
 #line 2014 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
 #line 169 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), "STRING");}
 #line 2020 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
 #line 170 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), "BOOLEANTRUE");}
 #line 2026 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 82:
 #line 171 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), "BOOLEANFALSE");}
 #line 2032 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 83:
 #line 172 "yacc4.y" /* yacc.c:1646  */
-    {(yyval) = mknode((yyvsp[0]), NULL, NULL);}
+    {(yyval) = mknode((yyvsp[0]), NULL, NULL);addFuncCallArgType((yyvsp[0]), NULL);}
 #line 2038 "y.tab.c" /* yacc.c:1646  */
     break;
 
