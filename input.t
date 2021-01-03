@@ -1,7 +1,8 @@
-proc Main () {
-
+proc Main(){
+	var a:int;
+	a = foo();
 }
-
-proc a(){
+proc foo()
+{
 	
 }

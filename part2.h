@@ -1,6 +1,7 @@
 typedef struct Declaration{
 	char *type;
 	char *name;
+	struct Declaration **arguments;
 } declaration;
 
 typedef struct Scope {
@@ -39,16 +40,21 @@ void pop();
 scope *peak();
 void setVarType(char *type);
 void setRetType(char *returnType);
-void addVar(char *varName);
 void setScope(char *name, char *type, char *returnType);
 void addArguments(char *type);
 void printStack();
-void setArgsType(char *type);
-void addArgVar(char *argVar);
 // void addProcFunc(char *name, char *type);
 void pushEndSign(char *sign);
 void pushNewScope();
 void popScope();
 void printGlobal();
+
+void checkFuncProcName();
 void printErrors();
+void popScope(char *type, char *returnType);
+void printAll();
+void addArgVar(char *argVar);
+void setArgType(char *type);
 void checkMain();
+void addVar(char *varName);
+void addFuncProcCall(char *callName);

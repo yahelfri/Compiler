@@ -278,7 +278,6 @@ void setScope(char *name, char *type, char *typeReturn) {
 	// 	//strcat
 	// 	addError("Error: there is function/procedure with name that already exist!");
 	// }
-	newScope->nextScope = NULL;
 	newScope->name = (char*)malloc(sizeof(name) + 1);
 	strcpy(newScope->name,name);
 	printf("1\n");
