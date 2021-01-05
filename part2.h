@@ -71,6 +71,7 @@ void checkStrType(char *type);
 void addLeft(char *varName);
 void addRightVar(char *type, char *name);
 void checkLeftRight();
+void addOperator(char *op);
 
 void checkExpressionISBool(char *expr1, char *type);
 void checkBoolStatements();

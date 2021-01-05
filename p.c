@@ -7,6 +7,7 @@
 #include "part2.h"
 
 /*Functions Declarations*/
+void addOperator(char *op);
 void checkLeftRight();
 void addRightVar(char *type, char *name);
 void addLeft(char *varName);
@@ -59,23 +60,70 @@ condition *myCondition;
 char *functionName;
 char *lhsVarType;
 char *rightVar;
+char *operator;
 
 /*check if the right and left sides of the asssignment are legal*/
 void checkLeftRight(){
-	printf("LEFT SIDE IS: %s\n", lhsVarType);
-	printf("lhs: %s\n", lhsVarType);
-	printf("RIGHT: %s\n", rightVar);
-	if(strcmp(lhsVarType, rightVar) != 0){
+	printf("IN CHECK\n");
+	printf("left side: %s\tright side: %s\n", lhsVarType, rightVar);
+	if(operator){
+		if((strcmp(operator, "+") == 0 ||
+		strcmp(operator, "-") == 0 || 
+		strcmp(operator, "*") == 0 ||
+		strcmp(operator, "/") == 0)){
+		if(strcmp(rightVar, "INTEGER") != 0 &&
+			strcmp(rightVar, "REAL") != 0){
+			addError("Error: operators '+', '-', '*', '/' must appear with integer or real operands!");
+			}
+		} else if(strcmp(operator, "!") == 0) {
+			if(strcmp(rightVar, "BOOLEAN") != 0){
+				addError("Error: operator '!' must appear with bool type");
+			}
+		} else if(strcmp(operator, "&") == 0) {
+			printf("in & IF\n");
+			if(strcmp(rightVar, "INTEGER") != 0 &&
+				strcmp(rightVar, "REAL") != 0 &&
+				strcmp(rightVar, "STRING") != 0){
+				addError("Error: operator '&' must appear with integer, real, or string operands!");
+			}
+		} else if(strcmp(operator, "^") == 0) {
+			if(strcmp(rightVar, "INT*") != 0 &&
+				strcmp(rightVar, "REAL*") != 0 &&
+				strcmp(rightVar, "STRING") != 0){
+				addError("Error: operator '^' must appear with pointers!");
+			}
+
+		}
+	}
+	if(lhsVarType && rightVar && strcmp(lhsVarType, rightVar) != 0){
 		addError("Error: left side type and right side type are not the same!");
 	}
-	free(lhsVarType);
-	free(rightVar);
+	if(lhsVarType){
+		free(lhsVarType);
+	}
+	if(rightVar){
+		free(rightVar);
+	}
+	if(operator){
+		free(operator);
+	}
+	operator = NULL;
 	lhsVarType = NULL;
 	rightVar = NULL;
 }
 
+void addOperator(char *op){
+	if(operator){	
+		free(operator);
+		operator = NULL;
+	}
+	operator = (char*)malloc(sizeof(op) + 1);
+	strcpy(operator, op);
+}
+
 /*add the type of the right side of the assignment*/
 void addRightVar(char *type, char *name){
+	printf("ADD RIGHT VAR\n");
 	//check if the type is IDENTIFIER
 	if(strcmp(type, "IDENTIFIER") == 0){
 		bool varExist = false;
@@ -85,7 +133,6 @@ void addRightVar(char *type, char *name){
 				varExist = true;
 				type = (char*)malloc(sizeof(temp->declarations[i]->type) + 1);
 				strcpy(type, temp->declarations[i]->type);
-				printf("identifier name: %s\tidentifier type: %s\n", name, type);
 			}
 		}
 		if(!varExist){
@@ -111,6 +158,7 @@ void addRightVar(char *type, char *name){
 
 /*add the name of the left hand assign*/
 void addLeft(char *varName){
+	printf("Add LEFT\n");
 	if(lhsVarType){
 		free(lhsVarType);
 		lhsVarType = NULL;

@@ -145,8 +145,7 @@ assignment: lhs ASIGN function_call comment {$$ = mknode("=", $1, $3);addVarAssi
 	| lhs ASIGN expr {$$ = mknode("=", $1, $3);checkLeftRight();};
 
 lhs: IDENTIFIER OINDEX str_expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addLeft($1);}
-	| deference_statement {$$ = $1;};
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addLeft($1);};
 
 str_expression: OLIST str_expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
 	//Logical operators
@@ -311,7 +310,7 @@ expr:
 	//Logical operators
 	| expr AND expr {$$ = mknode("&&", $1, $3);} 
 	| expr OR expr {$$ = mknode("||", $1, $3);}
-	| NOT expr {$$ = mknode("!", $2, NULL);}
+	| NOT expr {$$ = mknode("!", $2, NULL);addOperator("!");}
 	//Comparison operators
 	| expr COMPARE expr {$$ = mknode("==", $1, $3);}
 	| expr NOTEQUAL expr {$$ = mknode("!=", $1, $3);}
@@ -320,16 +319,16 @@ expr:
 	| expr GREATEREQUAL expr {$$ = mknode(">=", $1, $3);}
 	| expr LESSEQUAL expr {$$ = mknode("<=", $1, $3);}
 	//Arithmetic operatos
-	| expr PLUS expr {$$ = mknode("+", $1, $3);}
-	| expr MINUS expr {$$ = mknode("-", $1, $3);}
-	| expr MULTIPLY expr {$$ = mknode("*", $1, $3);}
-	| expr DIVIDE expr {$$ = mknode("/", $1, $3);}
+	| expr PLUS expr {$$ = mknode("+", $1, $3);addOperator("+");}
+	| expr MINUS expr {$$ = mknode("-", $1, $3);addOperator("-");}
+	| expr MULTIPLY expr {$$ = mknode("*", $1, $3);addOperator("*");}
+	| expr DIVIDE expr {$$ = mknode("/", $1, $3);addOperator("/");}
 	| expr ABSOLUTE expr 
 	{
 		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
 	}
 	| address_expression {$$ = $1;}
-	| deference_statement {$$ = $1;}
+	| deference_statement  {$$ = $1;}
 	| function_call comment {$$ = $1;}
 	//Arrays operators
 	| IDENTIFIER OINDEX expr CINDEX
@@ -349,14 +348,21 @@ expr:
 
 address_expression: ADDRESS address_expression {$$ = mknode($1, $2, NULL);} | address {$$ = $1;};
 
-address: ADDRESS IDENTIFIER {$$ = mknode("&", mknode($2, NULL, NULL), NULL);}
+address: ADDRESS IDENTIFIER {$$ = mknode("&", mknode($2, NULL, NULL), NULL);addOperator("&");addRightVar("IDENTIFIER", $2);}
 	| ADDRESS OLIST IDENTIFIER CLIST {$$ = mknode("&", mknode("(", mknode($3, NULL, NULL), NULL), mknode(")", NULL, NULL));}
-	| ADDRESS IDENTIFIER OINDEX expression CINDEX {$$ = mknode("&", mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));}
-	| ADDRESS OLIST IDENTIFIER OINDEX expression CINDEX CLIST {$$ = mknode("&", mknode("(", mknode($3, NULL, NULL), mknode("[", $5, NULL)), mknode("]", NULL, mknode(")", NULL, NULL)));};
+	| ADDRESS IDENTIFIER OINDEX str_expression CINDEX {$$ = mknode("&", mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));}
+	| ADDRESS OLIST IDENTIFIER OINDEX str_expression CINDEX CLIST {$$ = mknode("&", mknode("(", mknode($3, NULL, NULL), mknode("[", $5, NULL)), mknode("]", NULL, mknode(")", NULL, NULL)));}
+	| expr ADDRESS expr {addOperator("^");};
 
-deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NULL), NULL);}
-	| DEFERENCE OLIST expression CLIST {$$ = mknode("^", mknode("(", $3, NULL), mknode(")", NULL, NULL));}
-	| DEFERENCE IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));};
+deference_types: | INTP {$$ = mknode($1, NULL, NULL);addRightVar("INT*", NULL);}
+	| REALP {$$ = mknode($1, NULL, NULL);addRightVar("REAL*", NULL);}
+	| CHARP {$$ = mknode($1, NULL, NULL);addRightVar("CHAR*", NULL);}
+	| IDENTIFIER {addRightVar("IDENTIFIER", $1);};
+
+deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NULL), NULL);addOperator("^"); addRightVar("IDENTIFIER", $2);}
+	| DEFERENCE OLIST expr CLIST {$$ = mknode("^", mknode("(", $3, NULL), mknode(")", NULL, NULL));addOperator("^");}
+	| DEFERENCE IDENTIFIER OINDEX expr CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));}
+	| deference_types DEFERENCE deference_types {addOperator("^");};
 
 function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
 checkFuncProcCall($1);};
