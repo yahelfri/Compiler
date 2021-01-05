@@ -34,20 +34,15 @@ pushEndSign: {pushEndSign("$$");};
 
 program: procedures {($$ = mknode("CODE", $1, NULL));};
 
-//main: PROC MAIN OLIST CLIST OBLOCK procedure_body CBLOCK
-//{
-//	$$ = mknode("PROC", mknode("MAIN", mknode("\n", NULL, NULL), NULL), mknode("ARGS", NULL, $6));
-//} | {$$ = NULL;};
-
 procedures: procedures procedure comment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 
 procedure: PROC pushScope OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
-	popScope("procedure", "NULL");
+	popScope("procedure");
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
-} | FUNC pushScope OLIST parameters CLIST comment RETURN types OBLOCK procedure_body return_statement CBLOCK
+} | FUNC pushScope OLIST parameters CLIST comment RETURN ret_types OBLOCK procedure_body return_statement CBLOCK
 {
-	popScope("function", $7->token);
+	popScope("function");
 	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL), 
 		mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
 };
@@ -75,14 +70,23 @@ argsTypes: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);setArgType("BOOLEAN");}
 	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setArgType("CHAR*");}
 	| REALP {$$ = mknode("REAL*", NULL, NULL);setArgType("REAL*");};
 
-types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);}
-	| CHART {$$ = mknode("CHAR", NULL, NULL);}
-	| INTT {$$ = mknode("INTEGER", NULL, NULL);}
-	| REALT {$$ = mknode("REAL", NULL, NULL);}
-	| STRINGT {$$ = mknode("STRING", NULL, NULL);}
-	| INTP {$$ = mknode("INT*", NULL, NULL);}
-	| CHARP {$$ = mknode("CHAR*", NULL, NULL);}
-	| REALP {$$ = mknode("REAL*", NULL, NULL);};
+types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);setVarType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);setVarType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);setVarType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);setVarType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);setVarType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);setVarType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);setVarType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);setVarType("REAL*");};
+
+str_types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);checkStrType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);checkStrType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);checkStrType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);checkStrType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);checkStrType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);checkStrType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);checkStrType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);checkStrType("REAL*");};
 
 comment: COMMENT comment | ;
 
@@ -96,24 +100,26 @@ declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 declare: VAR vars COLONS types comment ENDLINE comment
 {
 	$$ = mknode("VAR", $4, $2);			
-} | VAR vars COLONS types OINDEX expression CINDEX ENDLINE {$$ = mknode("VAR", $2, mknode("[", $6, mknode("]", NULL, NULL)));};
+} | VAR vars COLONS str_types OINDEX str_expression CINDEX ENDLINE {$$ = mknode("VAR", $2, mknode("[", $6, mknode("]", NULL, NULL)));};
 
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
  
 statment: 
-	IF OLIST expression CLIST statment_block
+	IF OLIST stmnt_expression CLIST statment_block
 	{
+		checkCondition();
 		$$ = mknode("IF", mknode("(", $3, mknode(")", NULL, NULL)), $5);
 	}
-	| IF OLIST expression CLIST statment_block ELSE statment_block
+	| IF OLIST stmnt_expression CLIST statment_block ELSE statment_block
 	{
 		$$ = mknode("IF-ELSE", mknode("(", $3, mknode(")", NULL, NULL)), mknode("", $5, mknode("", $7, NULL)));
 	}
-	| WHILE comment OLIST expression CLIST statment_block
+	| WHILE comment OLIST stmnt_expression CLIST statment_block
 	{
+		checkCondition();
 		$$ = mknode("WHILE", mknode("(", $4, mknode(")", NULL, NULL)), $6);
 	}
-	| assignment ENDLINE comment {$$ = mknode("", $1, NULL);}
+	| assignment ENDLINE comment {$$ = mknode("", $1, NULL);clearFuncName();}
 	| expression ENDLINE comment {$$ = $1;}
 	| block {$$ = $1;};
 
@@ -124,13 +130,141 @@ block: OBLOCK comment declarations statements return_statement CBLOCK comment
 		$$ = mknode("{", $3, mknode("", $4, mknode("", $5, mknode("}", NULL, NULL))));
 	};
 
-return_statement: RETURN expression ENDLINE comment {$$ = mknode("RET", $2, NULL);} | {$$ = NULL;};
+return_statement: RETURN ret_expression ENDLINE comment {$$ = mknode("RET", $2, NULL);} | {$$ = NULL;};
 
-assignment: lhs ASIGN expression {$$ = mknode("=", $1, $3);};
+ret_types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);addReturnType("BOOLEAN");}
+	| CHART {$$ = mknode("CHAR", NULL, NULL);addReturnType("CHAR");}
+	| INTT {$$ = mknode("INTEGER", NULL, NULL);addReturnType("INTEGER");}
+	| REALT {$$ = mknode("REAL", NULL, NULL);addReturnType("REAL");}
+	| STRINGT {$$ = mknode("STRING", NULL, NULL);addReturnType("STRING");}
+	| INTP {$$ = mknode("INT*", NULL, NULL);addReturnType("INT*");}
+	| CHARP {$$ = mknode("CHAR*", NULL, NULL);addReturnType("CHAR*");}
+	| REALP {$$ = mknode("REAL*", NULL, NULL);addReturnType("REAL*");};
 
-lhs: IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);}
+assignment: lhs ASIGN function_call comment {$$ = mknode("=", $1, $3);addVarAssign($1->token);} 
+	| lhs ASIGN expr {$$ = mknode("=", $1, $3);checkLeftRight();};
+
+lhs: IDENTIFIER OINDEX str_expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addLeft($1);}
 	| deference_statement {$$ = $1;};
+
+str_expression: OLIST str_expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
+	//Logical operators
+	| str_expression AND str_expression {$$ = mknode("&&", $1, $3);} 
+	| str_expression OR str_expression {$$ = mknode("||", $1, $3);}
+	| NOT str_expression {$$ = mknode("!", $2, NULL);}
+	//Comparison operators
+	| str_expression COMPARE str_expression {$$ = mknode("==", $1, $3);}
+	| str_expression NOTEQUAL str_expression {$$ = mknode("!=", $1, $3);}
+	| str_expression GREATER str_expression {$$ = mknode(">", $1, $3);}
+	| str_expression LESS str_expression {$$ = mknode("<", $1, $3);}
+	| str_expression GREATEREQUAL str_expression {$$ = mknode(">=", $1, $3);}
+	| str_expression LESSEQUAL str_expression {$$ = mknode("<=", $1, $3);}
+	//Arithmetic operatos
+	| str_expression PLUS str_expression {$$ = mknode("+", $1, $3);}
+	| str_expression MINUS str_expression {$$ = mknode("-", $1, $3);}
+	| str_expression MULTIPLY str_expression {$$ = mknode("*", $1, $3);}
+	| str_expression DIVIDE str_expression {$$ = mknode("/", $1, $3);}
+	| str_expression ABSOLUTE str_expression 
+	{
+		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
+	}
+	| address_expression {$$ = $1;}
+	| deference_statement {$$ = $1;}
+	| function_call comment {$$ = $1;}
+	//Arrays operators
+	| IDENTIFIER OINDEX str_expression CINDEX
+	{
+		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
+	}
+	//variables, Constants and NULL 
+	| INTEGER {$$ = mknode($1, NULL, NULL); checkStringType("INTEGER");}
+	| REAL {$$ = mknode($1, NULL, NULL); checkStringType("REAL");}
+	| CHAR {$$ = mknode($1, NULL, NULL); checkStringType("CHAR");}
+	| STRING {$$ = mknode($1, NULL, NULL); checkStringType("STRING");}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL); checkStringType("BOOLEAN");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL); checkStringType("BOOLEAN");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);checkStringType("IDENTIFIER");}
+	| NULLL {$$ = mknode("NULL", NULL, NULL);};
+
+ret_expression: OLIST ret_expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
+	//Logical operators
+	| ret_expression AND ret_expression {$$ = mknode("&&", $1, $3);} 
+	| ret_expression OR ret_expression {$$ = mknode("||", $1, $3);}
+	| NOT ret_expression {$$ = mknode("!", $2, NULL);}
+	//Comparison operators
+	| ret_expression COMPARE ret_expression {$$ = mknode("==", $1, $3);}
+	| ret_expression NOTEQUAL ret_expression {$$ = mknode("!=", $1, $3);}
+	| ret_expression GREATER ret_expression {$$ = mknode(">", $1, $3);}
+	| ret_expression LESS ret_expression {$$ = mknode("<", $1, $3);}
+	| ret_expression GREATEREQUAL ret_expression {$$ = mknode(">=", $1, $3);}
+	| ret_expression LESSEQUAL ret_expression {$$ = mknode("<=", $1, $3);}
+	//Arithmetic operatos
+	| ret_expression PLUS ret_expression {$$ = mknode("+", $1, $3);}
+	| ret_expression MINUS ret_expression {$$ = mknode("-", $1, $3);}
+	| ret_expression MULTIPLY ret_expression {$$ = mknode("*", $1, $3);}
+	| ret_expression DIVIDE ret_expression {$$ = mknode("/", $1, $3);}
+	| ret_expression ABSOLUTE ret_expression 
+	{
+		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
+	}
+	| address_expression {$$ = $1;}
+	| deference_statement {$$ = $1;}
+	| function_call comment {$$ = $1;}
+	//Arrays operators
+	| IDENTIFIER OINDEX ret_expression CINDEX
+	{
+		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
+	}
+	//variables, Constants and NULL 
+	| INTEGER {$$ = mknode($1, NULL, NULL); checkReturn("INTEGER");}
+	| REAL {$$ = mknode($1, NULL, NULL); checkReturn("REAL");}
+	| CHAR {$$ = mknode($1, NULL, NULL); checkReturn("CHAR");}
+	| STRING {$$ = mknode($1, NULL, NULL); checkReturn("STRING");}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL); checkReturn("BOOLEAN");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL); checkReturn("BOOLEAN");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL); checkReturn($1);}
+	| NULLL {$$ = mknode("NULL", NULL, NULL);};
+
+stmnt_expression:
+	OLIST stmnt_expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
+	//Logical operators
+	| stmnt_expression AND stmnt_expression {$$ = mknode("&&", $1, $3);logiaclOperator("AND");} 
+	| stmnt_expression OR stmnt_expression {$$ = mknode("||", $1, $3);logiaclOperator("OR");}
+	| NOT stmnt_expression {$$ = mknode("!", $2, NULL);logiaclOperator("NOT");}
+	//Comparison operators
+	| stmnt_expression COMPARE stmnt_expression {$$ = mknode("==", $1, $3);operatorisHere("COMPARE");}
+	| stmnt_expression NOTEQUAL stmnt_expression {$$ = mknode("!=", $1, $3);operatorisHere("NOTEQUAL");}
+	| stmnt_expression GREATER stmnt_expression {$$ = mknode(">", $1, $3);operatorisHere("GREATER");}
+	| stmnt_expression LESS stmnt_expression {$$ = mknode("<", $1, $3);operatorisHere("LESS");}
+	| stmnt_expression GREATEREQUAL stmnt_expression {$$ = mknode(">=", $1, $3);operatorisHere("GREATEREQUAL");}
+	| stmnt_expression LESSEQUAL stmnt_expression {$$ = mknode("<=", $1, $3);operatorisHere("LESSEQUAL");}
+	//Arithmetic operatos
+	| stmnt_expression PLUS stmnt_expression {$$ = mknode("+", $1, $3);}
+	| stmnt_expression MINUS stmnt_expression {$$ = mknode("-", $1, $3);}
+	| stmnt_expression MULTIPLY stmnt_expression {$$ = mknode("*", $1, $3);}
+	| stmnt_expression DIVIDE stmnt_expression {$$ = mknode("/", $1, $3);}
+	| stmnt_expression ABSOLUTE stmnt_expression 
+	{
+		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
+	}
+	| address_expression {$$ = $1;}
+	| deference_statement {$$ = $1;}
+	| function_call comment {$$ = $1;}
+	//Arrays operators
+	| IDENTIFIER OINDEX stmnt_expression CINDEX
+	{
+		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
+	}
+	//variables, Constants and NULL 
+	| INTEGER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"INTEGER");}
+	| REAL {$$ = mknode($1, NULL, NULL); checkExpressionISBool($1,"REAL");}
+	| CHAR {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"CHAR");}
+	| STRING {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"STRING");}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANTRUE");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANFALSE");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"IDENTIFIER");}
+	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
 expression: 
 	OLIST expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
@@ -172,6 +306,47 @@ expression:
 	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, NULL);}
 	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
+expr: 
+	OLIST expr CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
+	//Logical operators
+	| expr AND expr {$$ = mknode("&&", $1, $3);} 
+	| expr OR expr {$$ = mknode("||", $1, $3);}
+	| NOT expr {$$ = mknode("!", $2, NULL);}
+	//Comparison operators
+	| expr COMPARE expr {$$ = mknode("==", $1, $3);}
+	| expr NOTEQUAL expr {$$ = mknode("!=", $1, $3);}
+	| expr GREATER expr {$$ = mknode(">", $1, $3);}
+	| expr LESS expr {$$ = mknode("<", $1, $3);}
+	| expr GREATEREQUAL expr {$$ = mknode(">=", $1, $3);}
+	| expr LESSEQUAL expr {$$ = mknode("<=", $1, $3);}
+	//Arithmetic operatos
+	| expr PLUS expr {$$ = mknode("+", $1, $3);}
+	| expr MINUS expr {$$ = mknode("-", $1, $3);}
+	| expr MULTIPLY expr {$$ = mknode("*", $1, $3);}
+	| expr DIVIDE expr {$$ = mknode("/", $1, $3);}
+	| expr ABSOLUTE expr 
+	{
+		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
+	}
+	| address_expression {$$ = $1;}
+	| deference_statement {$$ = $1;}
+	| function_call comment {$$ = $1;}
+	//Arrays operators
+	| IDENTIFIER OINDEX expr CINDEX
+	{
+		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
+	}
+	//variables, Constants and NULL 
+	| INTEGER {$$ = mknode($1, NULL, NULL);addRightVar("INTEGER", NULL);}
+	| REAL {$$ = mknode($1, NULL, NULL);addRightVar("REAL", NULL);}
+	| CHAR {$$ = mknode($1, NULL, NULL);addRightVar("CHAR", NULL);}
+	| STRING {$$ = mknode($1, NULL, NULL);addRightVar("STRING", NULL);}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addRightVar("IDENTIFIER", $1);}
+	| NULLL {$$ = mknode("NULL", NULL, NULL);};
+
+
 address_expression: ADDRESS address_expression {$$ = mknode($1, $2, NULL);} | address {$$ = $1;};
 
 address: ADDRESS IDENTIFIER {$$ = mknode("&", mknode($2, NULL, NULL), NULL);}
@@ -183,7 +358,8 @@ deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NUL
 	| DEFERENCE OLIST expression CLIST {$$ = mknode("^", mknode("(", $3, NULL), mknode(")", NULL, NULL));}
 	| DEFERENCE IDENTIFIER OINDEX expression CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));};
 
-function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));addFuncProcCall($1);};
+function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
+checkFuncProcCall($1);};
 
 call_expression: OLIST call_expression_args CLIST {$$ = $2;};
 
