@@ -48,7 +48,8 @@ null {return NULLL;}
 ":" {return COLONS;}
 ";" {return ENDLINE;}
 
-"/""%".*"%""/" {return COMMENT;}
+\/\%([^%]|[\r\n]|(\%([^%/]|[\r\n])))*\%+\/ {}
+
 
 true	{return BOOLEANTRUE;}	
 false {return BOOLEANFALSE;}													

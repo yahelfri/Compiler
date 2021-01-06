@@ -62,10 +62,12 @@ char *lhsVarType;
 char *rightVar;
 char *operator;
 
+void commen(){
+	// printf("COMMENT\n");
+}
+
 /*check if the right and left sides of the asssignment are legal*/
 void checkLeftRight(){
-	printf("IN CHECK\n");
-	printf("left side: %s\tright side: %s\n", lhsVarType, rightVar);
 	if(operator){
 		if((strcmp(operator, "+") == 0 ||
 		strcmp(operator, "-") == 0 || 
@@ -80,7 +82,6 @@ void checkLeftRight(){
 				addError("Error: operator '!' must appear with bool type");
 			}
 		} else if(strcmp(operator, "&") == 0) {
-			printf("in & IF\n");
 			if(strcmp(rightVar, "INTEGER") != 0 &&
 				strcmp(rightVar, "REAL") != 0 &&
 				strcmp(rightVar, "STRING") != 0){
@@ -123,7 +124,6 @@ void addOperator(char *op){
 
 /*add the type of the right side of the assignment*/
 void addRightVar(char *type, char *name){
-	printf("ADD RIGHT VAR\n");
 	//check if the type is IDENTIFIER
 	if(strcmp(type, "IDENTIFIER") == 0){
 		bool varExist = false;
@@ -158,7 +158,6 @@ void addRightVar(char *type, char *name){
 
 /*add the name of the left hand assign*/
 void addLeft(char *varName){
-	printf("Add LEFT\n");
 	if(lhsVarType){
 		free(lhsVarType);
 		lhsVarType = NULL;
@@ -411,20 +410,22 @@ void addFuncCallArgType(char *arg, char *type){
 		strcpy(newFuncCall->type, type);
 	}
 	if(functionCallSize - 1 > 0){
-		functionCallArguments =  (declaration**)realloc(functionCallArguments, functionCallSize);
+		printf("5\n");
+		functionCallArguments =  (declaration**)realloc(functionCallArguments, 100*sizeof(functionCallSize));
 	} else {
 		functionCallArguments = (declaration**)malloc(sizeof(declaration*));
 	}
 
 	functionCallArguments[functionCallSize - 1] = newFuncCall;
-
 	if(!isType){
 		addError("Error: variable use before declared!");
 	}
+	printf("after 5\n");
 }
 
 /*check function / procedure call exist in the same scope*/
 void checkFuncProcCall(char *callName) {
+	printf("III\n");
 	if(functionName){
 		free(functionName);
 	}
@@ -456,7 +457,8 @@ void checkFuncProcCall(char *callName) {
 			return;
 		}
 		for(int i = functionCallSize - 1; i >= 0; i--){
-			if(strcmp(functionCallArguments[i]->type, sp->arguments[i]->type) != 0 ){
+			printf("%s\n", sp->arguments[i]->type);
+			if(functionCallArguments[i]->type && strcmp(functionCallArguments[i]->type, sp->arguments[i]->type) != 0 ){
 					addError("Error: function/procedure call mismatch arguments type!");
 					return;
 			}
@@ -483,7 +485,7 @@ void addVar(char *varName){
 	scope *temp = peak();
 	temp->declarationSize++;
 	if(temp->declarationSize - 1 > 0){
-		temp->declarations = (declaration**)realloc(temp->declarations, temp->declarationSize);
+		temp->declarations = (declaration**)realloc(temp->declarations, 100*sizeof(temp->declarationSize));
 
 	}else {
 		temp->declarations = (declaration**)malloc(sizeof(declaration*));
@@ -568,7 +570,7 @@ void addArgVar(char *argVar){
 	scope *temp = peak();
 	temp->argumentSize++;
 	if(temp->argumentSize - 1 > 0){
-		temp->arguments = (declaration**)realloc(temp->arguments, temp->argumentSize);
+		temp->arguments = (declaration**)realloc(temp->arguments, 100*sizeof(temp->argumentSize));
 
 	}else {
 		temp->arguments = (declaration**)malloc(sizeof(declaration*));
@@ -590,7 +592,7 @@ void addError(char *err){
 	strcpy(e->errorMessage, err);
 	errorSize++;
 	if(errorSize - 1 > 0){
-		errors = (error**)realloc(errors, errorSize);
+		errors = (error**)realloc(errors, 100*sizeof(errors));
 	} else {
 		errors = (error**)malloc(sizeof(error*));
 	}
@@ -621,7 +623,6 @@ void p(scope *sp){
 
 /*print out all the environment scopes*/
 void printAll(){
-	printf("print:\n");
 	for(int i = globalScopeSize - 1; i >= 0; i--){
 		printf("scope name: %s\n", globalScope->scopes[i]->name);
 		p(globalScope->scopes[i]);
@@ -664,7 +665,7 @@ void pushEndSign(char *sign){
 void addToGlobal(scope *sp){
 	globalScopeSize++;
 	if(globalScopeSize - 1 > 0){
-		globalScope->scopes = (scope**)realloc(globalScope->scopes, globalScopeSize);
+		globalScope->scopes = (scope**)realloc(globalScope->scopes, 100 * sizeof(globalScopeSize));
 	} else {
 		globalScope = (global*)malloc(sizeof(global));
 		globalScope->scopes = (scope**)malloc(sizeof(scope*));
@@ -676,7 +677,7 @@ void addToGlobal(scope *sp){
 void addScopeToArrayOfScopes(scope *parent, scope *child){
 	parent->scopesSize++;
 	if(parent->scopesSize - 1 > 0){
-		parent->scopes = (scope**)realloc(parent->scopes, parent->scopesSize);
+		parent->scopes = (scope**)realloc(parent->scopes, 100*sizeof(parent->scopesSize));
 	} else {
 		parent->scopes = (scope**)malloc(sizeof(scope*));
 	}
@@ -699,7 +700,6 @@ void push(scope *sp) {
 		scopesStack = (stack*)malloc(sizeof(stack));
 		scopesStack->currentScope = sp;
 	}
-	printfStack();
 }
 
 void pop(){
