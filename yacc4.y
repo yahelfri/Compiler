@@ -38,15 +38,17 @@ procedures: procedures procedure  {$$ = mknode("", $1, $2);} | {$$ = NULL;};
 procedure: PROC pushScope OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 {
 	popScope("procedure");
+	endFunc();
 	$$ = mknode("PROC", mknode($2, mknode("\n",  NULL, NULL), NULL), mknode("ARGS", $4, $7));
 } | FUNC pushScope OLIST parameters CLIST  RETURN ret_types OBLOCK procedure_body return_statement CBLOCK
 {
 	popScope("function");
+	endFunc();
 	$$ = mknode("FUNC", mknode($2, mknode("\n", NULL, NULL), 
 		mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
 };
 
-pushScope: IDENTIFIER {pushNewScope($1);setFunctionName($1);};
+pushScope: IDENTIFIER {pushNewScope($1);setFunctionName($1);printFuncName();};
 	
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
@@ -103,16 +105,16 @@ declare: VAR vars COLONS types  ENDLINE
 statements: statements statment {$$ = mknode("", $1, $2);} | {$$ = NULL;};
  
 statment: 
-	IF OLIST stmnt_expression CLIST statment_block
+	IF {printIfCond("if");} OLIST stmnt_expression {printCond();} CLIST statment_block
 	{
 		checkCondition();
 		$$ = mknode("IF", mknode("(", $3, mknode(")", NULL, NULL)), $5);
 	}
-	| IF OLIST stmnt_expression CLIST statment_block ELSE statment_block
+	|IF {printIfCond("if");} OLIST stmnt_expression {printCond();} CLIST statment_block  ELSE statment_block
 	{
 		$$ = mknode("IF-ELSE", mknode("(", $3, mknode(")", NULL, NULL)), mknode("", $5, mknode("", $7, NULL)));
 	}
-	| WHILE  OLIST stmnt_expression CLIST statment_block
+	| WHILE {printIfCond("while");} OLIST stmnt_expression {printCond();} CLIST statment_block
 	{
 		checkCondition();
 		
@@ -139,7 +141,7 @@ ret_types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);addReturnType("BOOLEAN");}
 	| CHARP {$$ = mknode("CHAR*", NULL, NULL);addReturnType("CHAR*");}
 	| REALP {$$ = mknode("REAL*", NULL, NULL);addReturnType("REAL*");};
 
-assignment: lhs ASIGN function_call  {$$ = mknode("=", $1, $3);addVarAssign($1->token);} 
+assignment: lhs ASIGN function_call  {$$ = mknode("=", $1, $3);addVarAssign($1->token);printFunc();} 
 	| lhs ASIGN expr {$$ = mknode("=", $1, $3);checkLeftRight();printCode();};
 
 lhs: IDENTIFIER OINDEX str_expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
@@ -255,13 +257,13 @@ stmnt_expression:
 		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
 	}
 	//variables, Constants and NULL 
-	| INTEGER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"INTEGER");}
-	| REAL {$$ = mknode($1, NULL, NULL); checkExpressionISBool($1,"REAL");}
-	| CHAR {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"CHAR");}
-	| STRING {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"STRING");}
-	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANTRUE");}
-	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANFALSE");}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"IDENTIFIER");}
+	| INTEGER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"INTEGER");setRight($1);}
+	| REAL {$$ = mknode($1, NULL, NULL); checkExpressionISBool($1,"REAL");setRight($1);}
+	| CHAR {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"CHAR");setRight($1);}
+	| STRING {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"STRING");setRight($1);}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANTRUE");setRight($1);}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"BOOLEANFALSE");setRight($1);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);checkExpressionISBool($1,"IDENTIFIER");setRight($1);}
 	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
 expression: 
@@ -295,13 +297,13 @@ expression:
 		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
 	}
 	//variables, Constants and NULL 
-	| INTEGER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "INTEGER");}
-	| REAL {$$ = mknode($1, NULL, NULL); addFuncCallArgType($1, "REAL");}
-	| CHAR {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "CHAR");}
-	| STRING {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "STRING");}
-	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANTRUE");}
-	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANFALSE");}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, NULL);}
+	| INTEGER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "INTEGER");printParam($1);}
+	| REAL {$$ = mknode($1, NULL, NULL); addFuncCallArgType($1, "REAL");printParam($1);}
+	| CHAR {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "CHAR");printParam($1);}
+	| STRING {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "STRING");printParam($1);}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANTRUE");printParam("1");}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, "BOOLEANFALSE");printParam("1");}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addFuncCallArgType($1, NULL);printParam($1);}
 	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
 expr: 
@@ -363,7 +365,7 @@ deference_statement: DEFERENCE IDENTIFIER {$$ = mknode("^", mknode($2, NULL, NUL
 	| DEFERENCE IDENTIFIER OINDEX expr CINDEX {$$ = mknode($1, mknode($2, NULL, NULL), mknode("[", $4, mknode("]", NULL, NULL)));}
 	| deference_types DEFERENCE deference_types {addOperator("^");};
 
-function_call: IDENTIFIER call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
+function_call: IDENTIFIER {setFunctionName($1);} call_expression {$$ = mknode("FUNC_CALL", mknode($1, NULL, NULL), mknode("ARGS", $2, NULL));
 checkFuncProcCall($1);};
 
 call_expression: OLIST call_expression_args CLIST {$$ = $2;};
