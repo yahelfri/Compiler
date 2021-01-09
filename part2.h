@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 typedef struct Declaration{
 	char *type;
 	char *name;

@@ -410,7 +410,6 @@ void addFuncCallArgType(char *arg, char *type){
 		strcpy(newFuncCall->type, type);
 	}
 	if(functionCallSize - 1 > 0){
-		printf("5\n");
 		functionCallArguments =  (declaration**)realloc(functionCallArguments, 100*sizeof(functionCallSize));
 	} else {
 		functionCallArguments = (declaration**)malloc(sizeof(declaration*));
@@ -420,12 +419,10 @@ void addFuncCallArgType(char *arg, char *type){
 	if(!isType){
 		addError("Error: variable use before declared!");
 	}
-	printf("after 5\n");
 }
 
 /*check function / procedure call exist in the same scope*/
 void checkFuncProcCall(char *callName) {
-	printf("III\n");
 	if(functionName){
 		free(functionName);
 	}
@@ -457,7 +454,6 @@ void checkFuncProcCall(char *callName) {
 			return;
 		}
 		for(int i = functionCallSize - 1; i >= 0; i--){
-			printf("%s\n", sp->arguments[i]->type);
 			if(functionCallArguments[i]->type && strcmp(functionCallArguments[i]->type, sp->arguments[i]->type) != 0 ){
 					addError("Error: function/procedure call mismatch arguments type!");
 					return;

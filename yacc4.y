@@ -27,7 +27,7 @@
 %token COLONS COMMA ENDLINE 
 
 %%
-project:  pushEndSign program {checkMain();checkFuncProcName();printErrors();};
+project:  pushEndSign program {/*checkMain();checkFuncProcName();printErrors();*/};
 
 pushEndSign: {pushEndSign("$$");};
 
@@ -46,12 +46,13 @@ procedure: PROC pushScope OLIST parameters CLIST OBLOCK procedure_body CBLOCK
 		mknode("ARGS", $4, mknode("RET", $8, NULL))), mknode("", $10, $11));
 };
 
-pushScope: IDENTIFIER {pushNewScope($1);};
+pushScope: IDENTIFIER {pushNewScope($1);setFunctionName($1);};
+	
 
 parameters: para_list {$$ = $1;} | {$$ = NULL;};
 
 para_list: argVars COLONS argsTypes  {$$ = mknode("(", $3, mknode("", $1, mknode(")", NULL, NULL)));}
-	| para_list ENDLINE  para_list {};
+	| para_list ENDLINE  para_list {$$ = mknode("", $1, mknode("", $3, NULL));};
 
 
 argVars: IDENTIFIER COMMA argVars {$$ = mknode($1, mknode(" ", $3, NULL), NULL);addArgVar($1);}
@@ -89,7 +90,7 @@ str_types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);checkStrType("BOOLEAN");}
 
 procedure_body:  procedures declarations statements 
 {
-	
+	$$ = mknode("(BODY\n", mknode("", $1, NULL), mknode("", $2, mknode("", $3, mknode("}", NULL, NULL))));
 };
 
 declarations: declarations declare {$$ = mknode("", $1, $2);} | {$$ = NULL;};
@@ -139,10 +140,10 @@ ret_types: BOOLT {$$ = mknode("BOOLEAN", NULL, NULL);addReturnType("BOOLEAN");}
 	| REALP {$$ = mknode("REAL*", NULL, NULL);addReturnType("REAL*");};
 
 assignment: lhs ASIGN function_call  {$$ = mknode("=", $1, $3);addVarAssign($1->token);} 
-	| lhs ASIGN expr {$$ = mknode("=", $1, $3);checkLeftRight();};
+	| lhs ASIGN expr {$$ = mknode("=", $1, $3);checkLeftRight();printCode();};
 
 lhs: IDENTIFIER OINDEX str_expression CINDEX {$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addLeft($1);};
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addLeft($1);setLeft($1);};
 
 str_expression: OLIST str_expression CLIST {$$ = mknode("(", $2, mknode(")", NULL, NULL));}
 	//Logical operators
@@ -317,11 +318,11 @@ expr:
 	| expr GREATEREQUAL expr {$$ = mknode(">=", $1, $3);}
 	| expr LESSEQUAL expr {$$ = mknode("<=", $1, $3);}
 	//Arithmetic operatos
-	| expr PLUS expr {$$ = mknode("+", $1, $3);addOperator("+");}
-	| expr MINUS expr {$$ = mknode("-", $1, $3);addOperator("-");}
-	| expr MULTIPLY expr {$$ = mknode("*", $1, $3);addOperator("*");}
-	| expr DIVIDE expr {$$ = mknode("/", $1, $3);addOperator("/");}
-	| ABSOLUTE expr ABSOLUTE  {$$ = mknode("/", $1, $3);addOperator("/");}
+	| expr PLUS expr {$$ = mknode("+", $1, $3);addOperator("+");setRight("+");}
+	| expr MINUS expr {$$ = mknode("-", $1, $3);addOperator("-");setRight("-");}
+	| expr MULTIPLY expr {$$ = mknode("*", $1, $3);addOperator("*");setRight("*");}
+	| expr DIVIDE expr {$$ = mknode("/", $1, $3);addOperator("/");setRight("/");}
+	| ABSOLUTE expr ABSOLUTE  {$$ = mknode("/", $1, $3);addOperator("/");setRight("|");}
 	{
 		$$ = mknode("|", mknode($2, NULL, NULL), mknode("|", NULL, NULL));
 	}
@@ -334,13 +335,13 @@ expr:
 		$$ = mknode($1, mknode("[", $3, mknode("]", NULL, NULL)), NULL);
 	}
 	//variables, Constants and NULL 
-	| INTEGER {$$ = mknode($1, NULL, NULL);addRightVar("INTEGER", NULL);}
-	| REAL {$$ = mknode($1, NULL, NULL);addRightVar("REAL", NULL);}
-	| CHAR {$$ = mknode($1, NULL, NULL);addRightVar("CHAR", NULL);}
-	| STRING {$$ = mknode($1, NULL, NULL);addRightVar("STRING", NULL);}
-	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);}
-	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);}
-	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addRightVar("IDENTIFIER", $1);}
+	| INTEGER {$$ = mknode($1, NULL, NULL);addRightVar("INTEGER", NULL);setRight($1);} 
+	| REAL {$$ = mknode($1, NULL, NULL);addRightVar("REAL", NULL);setRight($1);}
+	| CHAR {$$ = mknode($1, NULL, NULL);addRightVar("CHAR", NULL);setRight($1);}
+	| STRING {$$ = mknode($1, NULL, NULL);addRightVar("STRING", NULL);setRight($1);}
+	| BOOLEANTRUE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);setRight($1);}
+	| BOOLEANFALSE {$$ = mknode($1, NULL, NULL);addRightVar("BOOLEAN", NULL);setRight($1);}
+	| IDENTIFIER {$$ = mknode($1, NULL, NULL);addRightVar("IDENTIFIER", $1); setRight($1);}
 	| NULLL {$$ = mknode("NULL", NULL, NULL);};
 
 
@@ -379,107 +380,118 @@ int main()
 /* allocate a new node in the tree */
 node* mknode(char *token, node *left, node *right)
 {
+	// printf("mknode1\n");
 	node* newnode = (node*)malloc(sizeof(node));
 	char* newtoken = (char*)malloc(sizeof(token) + 1);
 	strcpy(newtoken, token);
 	newnode->left = left;
 	newnode->right = right;
 	newnode->token = newtoken;
+	// printf("mknode2\n");
 	return newnode;
 }
 
 /* printing the tree */
 void printtree(node* tree)
 {
-	int flag = 4;
-	printTabs(level);
-	if(strcmp(tree->token, "VAR") == 0){
-		printf("(DECLARE ");
-		flag = 2;
-	} else if(strcmp(tree->token, "IF") == 0){
-		printf("(IF\n");
-		flag = 1;
-	} else if(strcmp(tree->token, "WHILE") == 0){
-		printf("(WHILE\n");
-		flag = 1;
-	} else if(strcmp(tree->token, "FUNC") == 0 || strcmp(tree->token, "PROC") == 0 ||
-		strcmp(tree->token, "PROC") == 0 || strcmp(tree->token, "CODE") == 0 ||
-		strcmp(tree->token, "FUNC_CALL") == 0){
-		printf("%s\n", tree->token);
-		flag = 2;
-	} else if(strcmp(tree->token, "ARGS") == 0){
-		printf("(ARGS ");
-		if(tree->left){
-			flag = 2;
-			printf("\n");
-		} else {
-			printf("NONE)\n");
-		}
-	} else if(strcmp(tree->token, "IF-ELSE") == 0){
-		printf("(IF-ELSE\n");
-		level--;
-		flag = 1;
-	} else if(strcmp(tree->token, "RET") == 0){
-		printf("(RET ");
-		flag = 2;
-	} else if(strcmp(tree->token, "{") == 0){
-		printf("(BLOCK\n");
-	} else if(strcmp(tree->token, "}") == 0){
-		printf(")\n");
-	// else if(strcmp(tree->token, "") == 0){
-
-	// }	
-	} else if(strcmp(tree->token, "(") == 0){
-		printf("(");
-	} else if(strcmp(tree->token, "\n") == 0){
-		printf("\n");
-	} else if(strcmp(tree->token, ")") == 0){
-		printf(")\n");
-	} else if(strcmp(tree->token, ",") == 0){
-		printf(",");
-	} else if(strcmp(tree->token, "!=") == 0 || strcmp(tree->token, "=") == 0 ||
-		strcmp(tree->token, "==") == 0 || strcmp(tree->token, ">") == 0 ||
-		strcmp(tree->token, "<") == 0 || strcmp(tree->token, ">=") == 0 ||
-		strcmp(tree->token, "<=") == 0 || strcmp(tree->token, "!") == 0 ||
-		strcmp(tree->token, "&&") == 0 || strcmp(tree->token, "||") == 0 ||
-		strcmp(tree->token, "+") == 0 || strcmp(tree->token, "-") == 0 ||
-		strcmp(tree->token, "*") == 0 || strcmp(tree->token, "/") == 0 ||
-		strcmp(tree->token, "&") == 0 || strcmp(tree->token, "^") == 0 ||
-		strcmp(tree->token, "|") == 0){
-		printf("(%s", tree->token);
-		if(strcmp(tree->token, "=") == 0){
-			flag = 0;
-		} else {
-			flag = 1;
-		}
-	} else {
-		if(tree && (!tree->left && !tree->right) || strcmp(tree->token, "MAIN") == 0){
-			printf("%s ", tree->token);
-		} else {
-			level++;
-			printf("%s", tree->token);
-			level--;
-		}
-	}
+	printf("TREE TOKEN: %s\n", tree->token);
 	if(tree->left){
-		level++;
 		printtree(tree->left);
-		level--;
 	}
 	if(tree->right){
-		level++;
 		printtree(tree->right);
-		level--;
 	}
-	if(flag == 2){
-		printf(")\n");
-	}
-	if(flag == 1){
-		printf(")");
-	}
-	if(flag == 0){
-		printf("\n)");
-	}
+
+
+	// int flag = 4;
+	// printTabs(level);
+	// if(strcmp(tree->token, "VAR") == 0){
+	// 	printf("(DECLARE ");
+	// 	flag = 2;
+	// } else if(strcmp(tree->token, "IF") == 0){
+	// 	printf("(IF\n");
+	// 	flag = 1;
+	// } else if(strcmp(tree->token, "WHILE") == 0){
+	// 	printf("(WHILE\n");
+	// 	flag = 1;
+	// } else if(strcmp(tree->token, "FUNC") == 0 || strcmp(tree->token, "PROC") == 0 ||
+	// 	strcmp(tree->token, "PROC") == 0 || strcmp(tree->token, "CODE") == 0 ||
+	// 	strcmp(tree->token, "FUNC_CALL") == 0){
+	// 	printf("%s\n", tree->token);
+	// 	flag = 2;
+	// } else if(strcmp(tree->token, "ARGS") == 0){
+	// 	printf("(ARGS ");
+	// 	if(tree->left){
+	// 		flag = 2;
+	// 		printf("\n");
+	// 	} else {
+	// 		printf("NONE)\n");
+	// 	}
+	// } else if(strcmp(tree->token, "IF-ELSE") == 0){
+	// 	printf("(IF-ELSE\n");
+	// 	level--;
+	// 	flag = 1;
+	// } else if(strcmp(tree->token, "RET") == 0){
+	// 	printf("(RET ");
+	// 	flag = 2;
+	// } else if(strcmp(tree->token, "{") == 0){
+	// 	printf("(BLOCK\n");
+	// } else if(strcmp(tree->token, "}") == 0){
+	// 	printf(")\n");
+	// // else if(strcmp(tree->token, "") == 0){
+
+	// // }	
+	// } else if(strcmp(tree->token, "(") == 0){
+	// 	printf("(");
+	// } else if(strcmp(tree->token, "\n") == 0){
+	// 	printf("\n");
+	// } else if(strcmp(tree->token, ")") == 0){
+	// 	printf(")\n");
+	// } else if(strcmp(tree->token, ",") == 0){
+	// 	printf(",");
+	// } else if(strcmp(tree->token, "!=") == 0 || strcmp(tree->token, "=") == 0 ||
+	// 	strcmp(tree->token, "==") == 0 || strcmp(tree->token, ">") == 0 ||
+	// 	strcmp(tree->token, "<") == 0 || strcmp(tree->token, ">=") == 0 ||
+	// 	strcmp(tree->token, "<=") == 0 || strcmp(tree->token, "!") == 0 ||
+	// 	strcmp(tree->token, "&&") == 0 || strcmp(tree->token, "||") == 0 ||
+	// 	strcmp(tree->token, "+") == 0 || strcmp(tree->token, "-") == 0 ||
+	// 	strcmp(tree->token, "*") == 0 || strcmp(tree->token, "/") == 0 ||
+	// 	strcmp(tree->token, "&") == 0 || strcmp(tree->token, "^") == 0 ||
+	// 	strcmp(tree->token, "|") == 0){
+	// 	printf("(%s", tree->token);
+	// 	if(strcmp(tree->token, "=") == 0){
+	// 		flag = 0;
+	// 	} else {
+	// 		flag = 1;
+	// 	}
+	// } else {
+	// 	if(tree && (!tree->left && !tree->right) || strcmp(tree->token, "MAIN") == 0){
+	// 		printf("%s ", tree->token);
+	// 	} else {
+	// 		level++;
+	// 		printf("%s", tree->token);
+	// 		level--;
+	// 	}
+	// }
+	// if(tree->left){
+	// 	level++;
+	// 	printtree(tree->left);
+	// 	level--;
+	// }
+	// if(tree->right){
+	// 	level++;
+	// 	printtree(tree->right);
+	// 	level--;
+	// }
+	// if(flag == 2){
+	// 	printf(")\n");
+	// }
+	// if(flag == 1){
+	// 	printf(")");
+	// }
+	// if(flag == 0){
+	// 	printf("\n)");
+	// }
 }
 
 void printTabs(int n)
